@@ -34,7 +34,7 @@ At this point, you can examine the problem dimensions using `mymodel.nvar`, `mym
 
 `ampl.jl` currently focuses on continuous problems written in the form
 
-    minimize f(x)  subject to l ≤ x ≤ u,  L ≤ c(x) ≤ U,
+    optimize f(x)  subject to l ≤ x ≤ u,  L ≤ c(x) ≤ U,
 
 where `f` is the objective function, `l` and `u` are vectors of lower and upper bounds on the variables, and `L` and `U` are vectors of lower and upper bounds on the general constraints.
 
@@ -58,7 +58,7 @@ Attribute   | Type               | Notes
 `nlin`      | `Range1{Int64}   ` | indices of nonlinear constraints (not network)
 `nnzj`      | `Int             ` | number of nonzeros in the sparse Jacobian
 `nnzh`      | `Int             ` | number of nonzeros in the sparse Hessian
-`minimize`  | `Bool            ` | true if optimize == minimize
+`minimize`  | `Bool            ` | true if `optimize == minimize`
 `islp`      | `Bool            ` | true if the problem is a linear program
 `name`      | `ASCIIString     ` | problem name
 
