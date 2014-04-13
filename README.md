@@ -91,3 +91,5 @@ Method                          | Notes
 ## Todo
 
 * Support for [multiple problems at once](http://ampl.com/REFS/HOOKING/index.html#Multipleproblemsandmultiplethreads)
+
+[![GPLv3](http://www.gnu.org/graphics/gplv3-88x31.png)](http://www.gnu.org/licenses/gpl.html "GPLv3")
