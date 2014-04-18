@@ -6,7 +6,7 @@
  */
 
 #include <julia/julia.h>
-#include "asl/asl_pfgh.h"              /* Ampl library headers    */
+#include "asl/asl_pfgh.h"              /* Ampl library headers */
 #include "asl/jacpdim.h"               /* For partially-separable structure */
 
 /* ========================================================================== */
@@ -23,7 +23,6 @@ static ASL_pfgh *asl;  /* Main ASL structure */
 
 static FILE *ampl_file  =  NULL;   /* Connection with Ampl nl file */
 static int   ampl_file_open = 0;   /* Number of open files counter */
-static int   ampl_written_sol = 0; /* Indicates whether solution was written */
 
 /* ========================================================================== */
 
@@ -43,15 +42,15 @@ int jampl_init(char *stub) {
     ampl_file = jac0dim(stub, (fint)strlen(stub));
 
     /* Allocate room to store problem data */
-    if (! (X0    = (real *)M1alloc(n_var*sizeof(real)))) return -2;
-    if (! (LUv   = (real *)M1alloc(n_var*sizeof(real)))) return -2;
-    if (! (Uvx   = (real *)M1alloc(n_var*sizeof(real)))) return -2;
-    if (! (pi0   = (real *)M1alloc(n_con*sizeof(real)))) return -2;
-    if (! (LUrhs = (real *)M1alloc(n_con*sizeof(real)))) return -2;
-    if (! (Urhsx = (real *)M1alloc(n_con*sizeof(real)))) return -2;
+    if (! (asl->i.X0_    = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return -2;
+    if (! (asl->i.LUv_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return -2;
+    if (! (asl->i.Uvx_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return -2;
+    if (! (asl->i.pi0_   = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return -2;
+    if (! (asl->i.LUrhs_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return -2;
+    if (! (asl->i.Urhsx_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return -2;
 
     /* Read in ASL structure */
-    want_xpi0 = 3;           /* Read primal and dual estimates */
+    asl->i.want_xpi0_ = 3;           /* Read primal and dual estimates */
     pfgh_read(ampl_file , 0);
 
     ampl_file_open = 1;
@@ -67,7 +66,7 @@ void jampl_finalize(void) {
 // Problem setup.
 
 int jampl_objtype(void) {
-  return objtype[0];  /* 0 means minimization problem. */
+  return asl->i.objtype_[0];  /* 0 means minimization problem. */
 }
 
 int jampl_nvar(void) {
@@ -95,7 +94,7 @@ int jampl_nnzh(void) {
 }
 
 int jampl_islp(void) {
-  return ((nlo + nlc + nlnc) > 0 ? 0 : 1);
+  return ((asl->i.nlo_ + asl->i.nlc_ + asl->i.nlnc_) > 0 ? 0 : 1);
 }
 
 double *jampl_x0(void) {
@@ -126,13 +125,13 @@ double *jampl_ucon(void) {
 
 void jampl_varscale(double *s) {
   fint ne;
-  for (int i = 0; i < n_var; i++)
+  for (int i = 0; i < asl->i.n_var_; i++)
     conscale_ASL((ASL*)asl, i, s[i], &ne);
   return;
 }
 
 double jampl_obj(double *x) {
-  fint ne;  // Error code. Currently ignored.
+  fint ne;
   return (*((ASL*)asl)->p.Objval)((ASL*)asl, 0, x, &ne);
 }
 
@@ -140,7 +139,7 @@ double *jampl_grad(double *x) {
   fint ne;
   double *g;
 
-  g = (double *)Malloc(n_var * sizeof(real));
+  g = (double *)Malloc(asl->i.n_var_ * sizeof(real));
   (*((ASL*)asl)->p.Objgrd)((ASL*)asl, 0, x, g, &ne);
   return g;
 }
@@ -157,7 +156,7 @@ void jampl_lagscale(double s) {
 
 void jampl_conscale(double *s) {
   fint ne;
-  for (int i = 0; i < n_con; i++)
+  for (int i = 0; i < asl->i.n_con_; i++)
     conscale_ASL((ASL*)asl, i, s[i], &ne);
   return;
 }
@@ -166,7 +165,7 @@ double *jampl_cons(double *x) {
   fint ne;
   double *c;
 
-  c = (double *)Malloc(n_con * sizeof(real));
+  c = (double *)Malloc(asl->i.n_con_ * sizeof(real));
   (*((ASL*)asl)->p.Conval)((ASL*)asl, x, c, &ne);
   return c;
 }
@@ -180,7 +179,7 @@ double *jampl_jcongrad(double *x, int j) {
   fint ne;
   double *g;
 
-  g = (double *)Malloc(n_var * sizeof(real));
+  g = (double *)Malloc(asl->i.n_var_ * sizeof(real));
   (*((ASL*)asl)->p.Congrd)((ASL*)asl, j, x, g, &ne);
   return g;
 }
@@ -239,7 +238,7 @@ jl_tuple_t *jampl_jac(double *x) {
   jacval(x, vals, &ne);
 
   // Fill in sparsity pattern. Account for 1-based indexing.
-  for (int i = 0; i < n_con; i++)
+  for (int i = 0; i < asl->i.n_con_; i++)
     for (cgrad *cg = Cgrad[i]; cg; cg = cg->next) {
         rows[cg->goff] = (long)i + 1;
         cols[cg->goff] = (long)(cg->varno) + 1;
@@ -273,7 +272,7 @@ double *jampl_hprod(double *x, double *y, double *v, double w) {
   double ow[1];  // Objective weight.
 
   ow[0]  = objtype[0] ? -w : w;
-  hv = (double *)Malloc(n_var * sizeof(real));
+  hv = (double *)Malloc(asl->i.n_var_ * sizeof(real));
   hvpinit_ASL((ASL*)asl, ihd_limit, 0, NULL, y);
   (*((ASL*)asl)->p.Hvcomp)((ASL*)asl, hv, v, -1, ow, y); // nobj=-1 so ow takes precendence.
   return hv;
@@ -284,11 +283,11 @@ double *jampl_ghjvprod(double *x, double *g, double *v) {
   double *y, *hv, *ghjv, prod;
   int i, j;
 
-  y = (double *)Malloc(n_con * sizeof(real));
-  hv = (double *)Malloc(n_var * sizeof(real));
-  ghjv = (double *)Malloc(n_con * sizeof(real));
+  y = (double *)Malloc(asl->i.n_con_ * sizeof(real));
+  hv = (double *)Malloc(asl->i.n_var_ * sizeof(real));
+  ghjv = (double *)Malloc(asl->i.n_con_ * sizeof(real));
 
-  for (j = 0 ; j < n_con ; j++) y[j] = 0.;
+  for (j = 0 ; j < asl->i.n_con_ ; j++) y[j] = 0.;
 
   // Process nonlinear constraints.
   for (j = 0 ; j < nlc ; j++) {
@@ -300,7 +299,7 @@ double *jampl_ghjvprod(double *x, double *g, double *v) {
     hvcomp(hv, v, 0, NULL, y);
 
     // Compute dot product g'Hi*v. Should use BLAS.
-    for (i = 0, prod = 0 ; i < n_var ; i++)
+    for (i = 0, prod = 0 ; i < asl->i.n_var_ ; i++)
       prod += (hv[i] * g[i]);
     ghjv[j] = prod;
 
@@ -311,7 +310,7 @@ double *jampl_ghjvprod(double *x, double *g, double *v) {
   free(hv);
 
   // All terms corresponding to linear constraints are zero.
-  for (j = nlc ; j < n_con ; j++) ghjv[j] = 0.;
+  for (j = nlc ; j < asl->i.n_con_ ; j++) ghjv[j] = 0.;
 
   return ghjv;
 }
@@ -339,7 +338,7 @@ jl_tuple_t *jampl_hess(double *x, double *y, double w) {
 
   // Fill in sparsity pattern. Account for 1-based indexing.
   int k = 0;
-  for (int i = 0; i < n_var; i++)
+  for (int i = 0; i < asl->i.n_var_; i++)
     for (int j = sputinfo->hcolstarts[i]; j < sputinfo->hcolstarts[i+1]; j++) {
       rows[k] = sputinfo->hrownos[j] + 1;
       cols[k] = i + 1;
