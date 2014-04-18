@@ -120,9 +120,7 @@ function obj(nlp :: AmplModel, x :: Array{Float64,1})
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  @jampl_call(:jampl_obj, Float64,
-              (Ptr{Void}, Ptr{Float64}),
-               nlp.__asl, x)
+  @jampl_call(:jampl_obj, Float64, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x)
 end
 
 function grad(nlp :: AmplModel, x :: Array{Float64,1})
@@ -131,18 +129,14 @@ function grad(nlp :: AmplModel, x :: Array{Float64,1})
     error("x must have length at least $(nlp.nvar)")
   end
   # Require that Julia be responsible for freeing up this chunk of memory.
-  pointer_to_array(@jampl_call(:jampl_grad, Ptr{Float64},
-                               (Ptr{Void}, Ptr{Float64}),
-                                nlp.__asl, x),
+  pointer_to_array(@jampl_call(:jampl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x),
                    (nlp.nvar,), true)
 end
 
 function lagscale(nlp :: AmplModel, s :: Float64)
   # Set the scaling factor σ in the Lagrangian:
   # L(x,y) = f(x) + σ ∑ yi ci(x).
-  @jampl_call(:jampl_lagscale, Void,
-              (Ptr{Void}, Float64),
-               nlp.__asl, s)
+  @jampl_call(:jampl_lagscale, Void, (Ptr{Void}, Float64), nlp.__asl, s)
 end
 
 function conscale(nlp :: AmplModel, s :: Array{Float64,1})
@@ -151,8 +145,7 @@ function conscale(nlp :: AmplModel, s :: Array{Float64,1})
     error("s must have length at least $(nlp.ncon)")
   end
   @jampl_call(:jampl_conscale, Void,
-              (Ptr{Void}, Ptr{Float64}),
-               nlp.__asl, s)
+              (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
 end
 
 function cons(nlp :: AmplModel, x :: Array{Float64,1})
@@ -161,9 +154,7 @@ function cons(nlp :: AmplModel, x :: Array{Float64,1})
     error("x must have length at least $(nlp.nvar)")
   end
   # Require that Julia be responsible for freeing up this chunk of memory.
-  pointer_to_array(@jampl_call(:jampl_cons, Ptr{Float64},
-                               (Ptr{Void}, Ptr{Float64}),
-                                nlp.__asl, x),
+  pointer_to_array(@jampl_call(:jampl_cons, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x),
                    (nlp.ncon,), true)
 end
 
@@ -176,9 +167,7 @@ function jth_con(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  @jampl_call(:jampl_jcon, Float64,
-              (Ptr{Void}, Ptr{Float64}, Int32),
-               nlp.__asl, x,            j-1)
+  @jampl_call(:jampl_jcon, Float64, (Ptr{Void}, Ptr{Float64}, Int32), nlp.__asl, x, j-1)
 end
 
 function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
@@ -217,9 +206,7 @@ function jac(nlp :: AmplModel, x :: Array{Float64,1})
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  rows, cols, vals = @jampl_call(:jampl_jac, Any,
-                                 (Ptr{Void}, Ptr{Float64}),
-                                  nlp.__asl, x)
+  rows, cols, vals = @jampl_call(:jampl_jac, Any, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x)
   sparse(rows, cols, vals, nlp.ncon, nlp.nvar)
 end
 
