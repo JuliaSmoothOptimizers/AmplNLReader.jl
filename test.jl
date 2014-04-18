@@ -33,8 +33,8 @@ end
 
 e = ones(nlp.nvar)
 for j = 1 : nlp.ncon
-  println("∇²c_$j(x0) * e =");
-  println(jth_hprod(nlp, nlp.x0, e, j))
+  print_formatted("∇²c_%d(x0) * e =", j);
+  print_array(jth_hprod(nlp, nlp.x0, e, j))
 end
 
 ghje = ghjvprod(nlp, nlp.x0, g, e)
