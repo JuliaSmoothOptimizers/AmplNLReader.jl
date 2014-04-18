@@ -1,193 +1,191 @@
-/* ==========================================
- * Generic Ampl interface for use with Julia.
- * Dominique Orban
- * Vancouver, April 2014.
- * ==========================================
- */
+// ==========================================
+// Generic Ampl interface for use with Julia.
+// Dominique Orban
+// Vancouver, April 2014.
+// ==========================================
 
 #include <julia/julia.h>
-#include "asl/asl_pfgh.h"              /* Ampl library headers */
-#include "asl/jacpdim.h"               /* For partially-separable structure */
+#include "asl/asl_pfgh.h"              // Ampl library headers
+#include "asl/jacpdim.h"               // For partially-separable structure
 
-/* ========================================================================== */
+// ==========================================================================
 
-/*
- *        P r o t o t y p e s   f o r   m o d u l e   f u n c t i o n s
- */
+//
+//        P r o t o t y p e s   f o r   m o d u l e   f u n c t i o n s
 
-/* ========================================================================== */
 
-/* Ampl driver specific declarations */
+// ==========================================================================
 
-static ASL_pfgh *asl;  /* Main ASL structure */
 
-static FILE *ampl_file  =  NULL;   /* Connection with Ampl nl file */
-static int   ampl_file_open = 0;   /* Number of open files counter */
 
-/* ========================================================================== */
+// ==========================================================================
 
-/*
- *                    M o d u l e   f u n c t i o n s
- */
+//
+//                    M o d u l e   f u n c t i o n s
 
-/* ========================================================================== */
 
-int jampl_init(char *stub) {
-    /* Fast return if a file is already open */
-    if (ampl_file_open) return 0;
+// ==========================================================================
 
-    /* Initialize main ASL structure */
-    if (! (asl  = (ASL_pfgh*)ASL_alloc(ASL_read_pfgh))) return -1;
+void *jampl_init(char *stub) {
+    ASL_pfgh *asl = (ASL_pfgh*)ASL_alloc(ASL_read_pfgh);
+    if (!asl) return NULL;
 
-    ampl_file = jac0dim(stub, (fint)strlen(stub));
+    FILE *ampl_file = jac0dim(stub, (fint)strlen(stub));
 
-    /* Allocate room to store problem data */
-    if (! (asl->i.X0_    = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return -2;
-    if (! (asl->i.LUv_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return -2;
-    if (! (asl->i.Uvx_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return -2;
-    if (! (asl->i.pi0_   = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return -2;
-    if (! (asl->i.LUrhs_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return -2;
-    if (! (asl->i.Urhsx_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return -2;
+    // Allocate room to store problem data
+    if (! (asl->i.X0_    = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+    if (! (asl->i.LUv_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+    if (! (asl->i.Uvx_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+    if (! (asl->i.pi0_   = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
+    if (! (asl->i.LUrhs_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
+    if (! (asl->i.Urhsx_ = (real* )M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
 
-    /* Read in ASL structure */
-    asl->i.want_xpi0_ = 3;           /* Read primal and dual estimates */
-    pfgh_read(ampl_file , 0);
+    // Read in ASL structure
+    asl->i.want_xpi0_ = 3;        // Read primal and dual estimates
+    pfgh_read(ampl_file , 0);     // pfgh_read closes the file.
 
-    ampl_file_open = 1;
-    return 0;
+    return (void *)asl;
 }
 
-void jampl_finalize(void) {
-    ASL_free((ASL **)(&asl));
-    ampl_file_open  = 0;
+void jampl_finalize(void *asl) {
+    ASL *this_asl = (ASL *)asl;
+    ASL_free((ASL **)(&this_asl));
     return;
 }
 
 // Problem setup.
 
-int jampl_objtype(void) {
-  return asl->i.objtype_[0];  /* 0 means minimization problem. */
+int jampl_objtype(void *asl) {
+  return ((ASL *)asl)->i.objtype_[0];  // 0 means minimization problem.
 }
 
-int jampl_nvar(void) {
-  return asl->i.n_var_;
+int jampl_nvar(void *asl) {
+  return ((ASL *)asl)->i.n_var_;
 }
 
-int jampl_ncon(void) {
-  return asl->i.n_con_;
+int jampl_ncon(void *asl) {
+  return ((ASL *)asl)->i.n_con_;
 }
 
-int jampl_nlc(void) {
-  return asl->i.nlc_;
+int jampl_nlc(void *asl) {
+  return ((ASL *)asl)->i.nlc_;
 }
 
-int jampl_nlnc(void) {
-  return asl->i.nlnc_;
+int jampl_nlnc(void *asl) {
+  return ((ASL *)asl)->i.nlnc_;
 }
 
-int jampl_nnzj(void) {
-  return asl->i.nzc_;
+int jampl_nnzj(void *asl) {
+  return ((ASL *)asl)->i.nzc_;
 }
 
-int jampl_nnzh(void) {
-  return (int)sphsetup(-1, 1, 1, 1);
+int jampl_nnzh(void *asl) {
+  ASL *this_asl = (ASL *)asl;
+  return (int)((*(this_asl->p.Sphset))(this_asl, 0, -1, 1, 1, 1));
 }
 
-int jampl_islp(void) {
-  return ((asl->i.nlo_ + asl->i.nlc_ + asl->i.nlnc_) > 0 ? 0 : 1);
+int jampl_islp(void *asl) {
+  ASL *this_asl = (ASL *)asl;
+  return ((this_asl->i.nlo_ + this_asl->i.nlc_ + this_asl->i.nlnc_) > 0 ? 0 : 1);
 }
 
-double *jampl_x0(void) {
-  return asl->i.X0_;
+double *jampl_x0(void *asl) {
+  return ((ASL *)asl)->i.X0_;
 }
 
-double *jampl_y0(void) {
-  return asl->i.pi0_;
+double *jampl_y0(void *asl) {
+  return ((ASL *)asl)->i.pi0_;
 }
 
-double *jampl_lvar(void) {
-  return asl->i.LUv_;
+double *jampl_lvar(void *asl) {
+  return ((ASL *)asl)->i.LUv_;
 }
 
-double *jampl_uvar(void) {
-  return asl->i.Uvx_;
+double *jampl_uvar(void *asl) {
+  return ((ASL *)asl)->i.Uvx_;
 }
 
-double *jampl_lcon(void) {
-  return asl->i.LUrhs_;
+double *jampl_lcon(void *asl) {
+  return ((ASL *)asl)->i.LUrhs_;
 }
 
-double *jampl_ucon(void) {
-  return asl->i.Urhsx_;
+double *jampl_ucon(void *asl) {
+  return ((ASL *)asl)->i.Urhsx_;
 }
 
 // Objective.
 
-void jampl_varscale(double *s) {
+void jampl_varscale(void *asl, double *s) {
   fint ne;
-  for (int i = 0; i < asl->i.n_var_; i++)
-    conscale_ASL((ASL*)asl, i, s[i], &ne);
+  int this_nvar = ((ASL *)asl)->i.n_var_;
+
+  for (int i = 0; i < this_nvar; i++)
+    varscale_ASL((ASL *)asl, i, s[i], &ne);
   return;
 }
 
-double jampl_obj(double *x) {
+double jampl_obj(void *asl, double *x) {
   fint ne;
-  return (*((ASL*)asl)->p.Objval)((ASL*)asl, 0, x, &ne);
+  return (*((ASL *)asl)->p.Objval)((ASL *)asl, 0, x, &ne);
 }
 
-double *jampl_grad(double *x) {
+double *jampl_grad(void *asl, double *x) {
   fint ne;
-  double *g;
+  int this_nvar = ((ASL *)asl)->i.n_var_;
+  double *g = (double *)Malloc(this_nvar * sizeof(real));
 
-  g = (double *)Malloc(asl->i.n_var_ * sizeof(real));
-  (*((ASL*)asl)->p.Objgrd)((ASL*)asl, 0, x, g, &ne);
+  (*((ASL *)asl)->p.Objgrd)((ASL *)asl, 0, x, g, &ne);
   return g;
 }
 
 // Lagrangian.
 
-void jampl_lagscale(double s) {
+void jampl_lagscale(void *asl, double s) {
   fint ne;
-  lagscale_ASL((ASL*)asl, s, &ne);
+  lagscale_ASL((ASL *)asl, s, &ne);
   return;
 }
 
 // Constraints and Jacobian.
 
-void jampl_conscale(double *s) {
+void jampl_conscale(void *asl, double *s) {
   fint ne;
-  for (int i = 0; i < asl->i.n_con_; i++)
-    conscale_ASL((ASL*)asl, i, s[i], &ne);
+  int this_ncon = ((ASL *)asl)->i.n_con_;
+
+  for (int j = 0; j < this_ncon; j++)
+    conscale_ASL((ASL *)asl, j, s[j], &ne);
   return;
 }
 
-double *jampl_cons(double *x) {
+double *jampl_cons(void *asl, double *x) {
   fint ne;
-  double *c;
+  int this_ncon = ((ASL *)asl)->i.n_con_;
+  double *c = (double *)Malloc(this_ncon * sizeof(real));
 
-  c = (double *)Malloc(asl->i.n_con_ * sizeof(real));
-  (*((ASL*)asl)->p.Conval)((ASL*)asl, x, c, &ne);
+  (*((ASL *)asl)->p.Conval)((ASL *)asl, x, c, &ne);
   return c;
 }
 
-double jampl_jcon(double *x, int j) {
+double jampl_jcon(void *asl, double *x, int j) {
   fint ne;
-  return (*((ASL*)asl)->p.Conival)((ASL*)asl, j, x, &ne);
+  return (*((ASL *)asl)->p.Conival)((ASL *)asl, j, x, &ne);
 }
 
-double *jampl_jcongrad(double *x, int j) {
-  fint ne;
-  double *g;
+double *jampl_jcongrad(void *asl, double *x, int j) {
+  ASL *this_asl = (ASL *)asl;
+  int this_nvar = this_asl->i.n_var_;
+  double *g = (double *)Malloc(this_nvar * sizeof(real));
 
-  g = (double *)Malloc(asl->i.n_var_ * sizeof(real));
-  (*((ASL*)asl)->p.Congrd)((ASL*)asl, j, x, g, &ne);
+  fint ne;
+  (*(this_asl->p.Congrd))(this_asl, j, x, g, &ne);
   return g;
 }
 
-jl_tuple_t *jampl_sparse_congrad(double *x, int j) {
+jl_tuple_t *jampl_sparse_congrad(void *asl, double *x, int j) {
+  ASL *this_asl = (ASL *)asl;
   size_t nzgj = 0;
   cgrad *cg;
-  for (cg = asl->i.Cgrad_[j]; cg; cg = cg->next) nzgj++;
+  for (cg = this_asl->i.Cgrad_[j]; cg; cg = cg->next) nzgj++;
 
   // Declare double and long Julia array types.
   jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
@@ -200,17 +198,17 @@ jl_tuple_t *jampl_sparse_congrad(double *x, int j) {
   long   *inds = (long   *)jl_array_data(jinds);
   double *vals = (double *)jl_array_data(jvals);
 
-  int congrd_mode_bkup = asl->i.congrd_mode;
-  asl->i.congrd_mode = 1;  // Sparse gradient mode.
+  int congrd_mode_bkup = this_asl->i.congrd_mode;
+  this_asl->i.congrd_mode = 1;  // Sparse gradient mode.
 
   fint ne;
-  congrd(j, x, vals, &ne);
+  (*(this_asl->p.Congrd))(this_asl, j, x, vals, &ne);
 
   int k = 0;
-  for (cg = Cgrad[j]; cg; cg = cg->next)
+  for (cg = this_asl->i.Cgrad_[j]; cg; cg = cg->next)
       inds[k++] = (long)(cg->varno) + 1;
 
-  asl->i.congrd_mode = congrd_mode_bkup;  // Restore gradient mode.
+  this_asl->i.congrd_mode = congrd_mode_bkup;  // Restore gradient mode.
 
   jl_tuple_t *tuple = jl_alloc_tuple(2);
   jl_tupleset(tuple, 0, jinds);
@@ -220,14 +218,17 @@ jl_tuple_t *jampl_sparse_congrad(double *x, int j) {
 }
 
 // Return Jacobian at x in triplet form (rows, vals, cols).
-jl_tuple_t *jampl_jac(double *x) {
+jl_tuple_t *jampl_jac(void *asl, double *x) {
+  ASL *this_asl = (ASL *)asl;
+  int this_nzc = this_asl->i.nzc_, this_ncon = this_asl->i.n_con_;
+
   // Declare double and long Julia array types.
   jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
   jl_value_t *int64_array_type   = jl_apply_array_type(jl_int64_type,   1);
 
-  jl_array_t *jvals = jl_alloc_array_1d(float64_array_type, (size_t)(asl->i.nzc_));
-  jl_array_t *jrows = jl_alloc_array_1d(int64_array_type,   (size_t)(asl->i.nzc_));
-  jl_array_t *jcols = jl_alloc_array_1d(int64_array_type,   (size_t)(asl->i.nzc_));
+  jl_array_t *jvals = jl_alloc_array_1d(float64_array_type, (size_t)(this_nzc));
+  jl_array_t *jrows = jl_alloc_array_1d(int64_array_type,   (size_t)(this_nzc));
+  jl_array_t *jcols = jl_alloc_array_1d(int64_array_type,   (size_t)(this_nzc));
   JL_GC_PUSH3(&jvals, &jrows, &jcols);  // Let Julia worry about these chunks.
 
   long   *rows = (long   *)jl_array_data(jrows);
@@ -235,12 +236,12 @@ jl_tuple_t *jampl_jac(double *x) {
   double *vals = (double *)jl_array_data(jvals);
 
   fint ne;
-  jacval(x, vals, &ne);
+  (*(this_asl->p.Jacval))(this_asl, x, vals, &ne);
 
   // Fill in sparsity pattern. Account for 1-based indexing.
-  for (int i = 0; i < asl->i.n_con_; i++)
-    for (cgrad *cg = Cgrad[i]; cg; cg = cg->next) {
-        rows[cg->goff] = (long)i + 1;
+  for (int j = 0; j < this_ncon; j++)
+    for (cgrad *cg = this_asl->i.Cgrad_[j]; cg; cg = cg->next) {
+        rows[cg->goff] = (long)j + 1;
         cols[cg->goff] = (long)(cg->varno) + 1;
     }
 
@@ -267,39 +268,44 @@ jl_tuple_t *jampl_jac(double *x) {
 
 // Hessian.
 
-double *jampl_hprod(double *x, double *y, double *v, double w) {
-  double *hv;
+double *jampl_hprod(void *asl, double *x, double *y, double *v, double w) {
+  ASL *this_asl = (ASL *)asl;
+  int this_nvar = this_asl->i.n_var_;
+  double *hv = (double *)Malloc(this_nvar * sizeof(real));
   double ow[1];  // Objective weight.
 
-  ow[0]  = objtype[0] ? -w : w;
-  hv = (double *)Malloc(asl->i.n_var_ * sizeof(real));
-  hvpinit_ASL((ASL*)asl, ihd_limit, 0, NULL, y);
-  (*((ASL*)asl)->p.Hvcomp)((ASL*)asl, hv, v, -1, ow, y); // nobj=-1 so ow takes precendence.
+  ow[0]  = this_asl->i.objtype_[0] ? -w : w;
+  hvpinit_ASL(this_asl, this_asl->p.ihd_limit_, 0, NULL, y);
+  (*(this_asl->p.Hvcomp))(this_asl, hv, v, -1, ow, y); // nobj=-1 so ow takes precendence.
   return hv;
 }
 
-double *jampl_ghjvprod(double *x, double *g, double *v) {
+double *jampl_ghjvprod(void *asl, double *x, double *g, double *v) {
+  ASL *this_asl = (ASL *)asl;
+  int this_ncon = this_asl->i.n_con_;
+  int this_nvar = this_asl->i.n_var_;
+  int this_nlc  = this_asl->i.nlc_;
+  double *y     = (double *)Malloc(this_ncon * sizeof(real));
+  double *hv    = (double *)Malloc(this_nvar * sizeof(real));
+  double *ghjv  = (double *)Malloc(this_ncon * sizeof(real));
+
   fint ne;
-  double *y, *hv, *ghjv, prod;
+  double prod;
   int i, j;
 
-  y = (double *)Malloc(asl->i.n_con_ * sizeof(real));
-  hv = (double *)Malloc(asl->i.n_var_ * sizeof(real));
-  ghjv = (double *)Malloc(asl->i.n_con_ * sizeof(real));
-
-  for (j = 0 ; j < asl->i.n_con_ ; j++) y[j] = 0.;
+  for (j = 0 ; j < this_ncon ; j++) y[j] = 0.;
 
   // Process nonlinear constraints.
-  for (j = 0 ; j < nlc ; j++) {
+  for (j = 0 ; j < this_nlc ; j++) {
     // Set vector of multipliers to (0, 0, ..., -1, ..., 0).
     y[j] = -1.;
 
     // Compute hv = Hj * v by setting OW to NULL.
-    hvpinit_ASL((ASL*)asl, ihd_limit, 0, NULL, y);
-    hvcomp(hv, v, 0, NULL, y);
+    hvpinit_ASL(this_asl, this_asl->p.ihd_limit_, 0, NULL, y);
+    (*(this_asl->p.Hvcomp))(this_asl, hv, v, 0, NULL, y);
 
     // Compute dot product g'Hi*v. Should use BLAS.
-    for (i = 0, prod = 0 ; i < asl->i.n_var_ ; i++)
+    for (i = 0, prod = 0 ; i < this_nvar ; i++)
       prod += (hv[i] * g[i]);
     ghjv[j] = prod;
 
@@ -310,16 +316,16 @@ double *jampl_ghjvprod(double *x, double *g, double *v) {
   free(hv);
 
   // All terms corresponding to linear constraints are zero.
-  for (j = nlc ; j < asl->i.n_con_ ; j++) ghjv[j] = 0.;
+  for (j = this_nlc ; j < this_ncon ; j++) ghjv[j] = 0.;
 
   return ghjv;
 }
 
 // Return Hessian at (x,y) in triplet form (rows, vals, cols).
-jl_tuple_t *jampl_hess(double *x, double *y, double w) {
+jl_tuple_t *jampl_hess(void *asl, double *x, double *y, double w) {
+  ASL *this_asl = (ASL *)asl;
   double ow[1];  // Objective weight.
-  ow[0]  = objtype[0] ? -w : w;
-  size_t nnzh = (size_t)sphsetup(-1, 1, 1, 1); // nobj=-1 so ow takes precendence.
+  size_t nnzh = (size_t)((*(this_asl->p.Sphset))(this_asl, 0, -1, 1, 1, 1)); // nobj=-1 so ow takes precendence.
 
   // Declare double and long Julia array types.
   jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
@@ -334,13 +340,14 @@ jl_tuple_t *jampl_hess(double *x, double *y, double w) {
   long   *cols = (long   *)jl_array_data(jcols);
   double *vals = (double *)jl_array_data(jvals);
 
-  sphes(vals, -1, ow, y);
+  ow[0]  = this_asl->i.objtype_[0] ? -w : w;
+  (*(this_asl->p.Sphes))(this_asl, 0, vals, -1, ow, y);
 
   // Fill in sparsity pattern. Account for 1-based indexing.
   int k = 0;
-  for (int i = 0; i < asl->i.n_var_; i++)
-    for (int j = sputinfo->hcolstarts[i]; j < sputinfo->hcolstarts[i+1]; j++) {
-      rows[k] = sputinfo->hrownos[j] + 1;
+  for (int i = 0; i < this_asl->i.n_var_; i++)
+    for (int j = this_asl->i.sputinfo_->hcolstarts[i]; j < this_asl->i.sputinfo_->hcolstarts[i+1]; j++) {
+      rows[k] = this_asl->i.sputinfo_->hrownos[j] + 1;
       cols[k] = i + 1;
       k++;
     }
