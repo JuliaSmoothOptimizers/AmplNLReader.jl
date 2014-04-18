@@ -1,3 +1,5 @@
+print_formatted(fmt, args...) = @eval @printf($fmt, $(args...))
+
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
 function print_array(x :: Vector; border=3, fmt :: String = "%8.1e")
