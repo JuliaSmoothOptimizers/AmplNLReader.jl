@@ -1,6 +1,8 @@
 # A rudimentary AMPL interface in Julia.
 # D. Orban, Vancouver, April 2014.
 
+include("ampl_utils.jl")
+
 # Convenience macros and libasl specifics.
 jampl = "jampl";
 macro jampl_call(func, args...)
@@ -99,11 +101,39 @@ type AmplModel
 
 end
 
-# Methods associated to AmplModel objects.
+# Methods associated to AmplModel instances.
 
 function amplmodel_finalize(nlp :: AmplModel)
   @jampl_call(:jampl_finalize, Void, (Ptr{Void},), nlp.__asl)
 end
+
+# Displaying AmplModel instances.
+
+import Base.show, Base.print
+function show(io :: IO, nlp :: AmplModel)
+  s  = sprint_formatted (nlp.minimize ? "Minimization " : "Maximization ")
+  s *= @sprintf "problem %s\n" nlp.name
+  s *= @sprintf "nvar = %d, ncon = %d (%d linear)\n" nlp.nvar nlp.ncon nlp.nlc
+  print(io, s)
+end
+
+function print(io :: IO, nlp :: AmplModel)
+  print_formatted (nlp.minimize ? "Minimization " : "Maximization ")
+  @printf "problem %s\n" nlp.name
+  @printf "nvar = %d, ncon = %d (%d linear)\n" nlp.nvar nlp.ncon nlp.nlc
+  @printf "lvar = "; print_array(nlp.lvar)
+  @printf "uvar = "; print_array(nlp.uvar)
+  @printf "lcon = "; print_array(nlp.lcon)
+  @printf "ucon = "; print_array(nlp.ucon)
+  @printf "x0 = ";   print_array(nlp.x0)
+  @printf "y0 = ";   print_array(nlp.y0)
+end
+
+function display(d :: Display, m :: MIME"text/plain", nlp :: AmplModel)
+  print(d.io, nlp)
+end
+
+# Scaling AmplModel instances.
 
 function varscale(nlp :: AmplModel, s :: Array{Float64,1})
   # Scale the vector of variables by the vector s.
@@ -114,6 +144,23 @@ function varscale(nlp :: AmplModel, s :: Array{Float64,1})
               (Ptr{Void}, Ptr{Float64}),
                nlp.__asl, s)
 end
+
+function lagscale(nlp :: AmplModel, s :: Float64)
+  # Set the scaling factor σ in the Lagrangian:
+  # L(x,y) = f(x) + σ ∑ yi ci(x).
+  @jampl_call(:jampl_lagscale, Void, (Ptr{Void}, Float64), nlp.__asl, s)
+end
+
+function conscale(nlp :: AmplModel, s :: Array{Float64,1})
+  # Scale the vector of constraints by the vector s.
+  if length(s) < nlp.ncon
+    error("s must have length at least $(nlp.ncon)")
+  end
+  @jampl_call(:jampl_conscale, Void,
+              (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
+end
+
+# Evaluating objective, constraints and derivatives.
 
 function obj(nlp :: AmplModel, x :: Array{Float64,1})
   # Evaluate the objective function at x.
@@ -131,21 +178,6 @@ function grad(nlp :: AmplModel, x :: Array{Float64,1})
   # Require that Julia be responsible for freeing up this chunk of memory.
   pointer_to_array(@jampl_call(:jampl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x),
                    (nlp.nvar,), true)
-end
-
-function lagscale(nlp :: AmplModel, s :: Float64)
-  # Set the scaling factor σ in the Lagrangian:
-  # L(x,y) = f(x) + σ ∑ yi ci(x).
-  @jampl_call(:jampl_lagscale, Void, (Ptr{Void}, Float64), nlp.__asl, s)
-end
-
-function conscale(nlp :: AmplModel, s :: Array{Float64,1})
-  # Scale the vector of constraints by the vector s.
-  if length(s) < nlp.ncon
-    error("s must have length at least $(nlp.ncon)")
-  end
-  @jampl_call(:jampl_conscale, Void,
-              (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
 end
 
 function cons(nlp :: AmplModel, x :: Array{Float64,1})
