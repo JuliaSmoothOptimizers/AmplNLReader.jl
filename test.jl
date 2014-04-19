@@ -4,14 +4,7 @@ include("ampl.jl")
 include("ampl_utils.jl")
 
 function exercise_ampl_model(nlp :: AmplModel)
-  @printf "problem %s\n" nlp.name
-  @printf "nvar = %d, ncon = %d\n" nlp.nvar nlp.ncon
-  @printf "lvar = "; print_array(nlp.lvar)
-  @printf "uvar = "; print_array(nlp.uvar)
-  @printf "lcon = "; print_array(nlp.lcon)
-  @printf "ucon = "; print_array(nlp.ucon)
-  @printf "x0 = "; print_array(nlp.x0)
-  @printf "y0 = "; print_array(nlp.y0)
+  print(nlp)
 
   f = obj( nlp, nlp.x0)
   g = grad(nlp, nlp.x0)
