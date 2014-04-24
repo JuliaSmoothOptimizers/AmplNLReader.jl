@@ -1,41 +1,37 @@
 # Test ampl.jl.
-
 include("ampl.jl")
-include("ampl_utils.jl")
 
-stub = "hs033.nl"
-nlp = AmplModel(stub)
+function exercise_ampl_model(nlp :: AmplModel)
+  print(nlp)
 
-@printf "problem %s\n" nlp.name
-@printf "nvar = %d, ncon = %d\n" nlp.nvar nlp.ncon
-@printf "lvar = "; print_array(nlp.lvar)
-@printf "uvar = "; print_array(nlp.uvar)
-@printf "lcon = "; print_array(nlp.lcon)
-@printf "ucon = "; print_array(nlp.ucon)
-@printf "x0 = "; print_array(nlp.x0)
-@printf "y0 = "; print_array(nlp.y0)
+  f = obj( nlp, nlp.x0)
+  g = grad(nlp, nlp.x0)
+  c = cons(nlp, nlp.x0)
+  J = jac( nlp, nlp.x0)
+  H = hess(nlp, nlp.x0, y=ones(nlp.ncon,))
 
-f = obj( nlp, nlp.x0)
-g = grad(nlp, nlp.x0)
-c = cons(nlp, nlp.x0)
-J = jac( nlp, nlp.x0)
-H = hess(nlp, nlp.x0, y=ones(nlp.ncon,))
+  @printf("f(x0) = %f\n", f)
+  @printf("∇f(x0) = "); display(g'); @printf("\n")
+  @printf("c(x0) = ");  display(c'); @printf("\n")
+  for j = 1 : nlp.ncon
+    @printf("∇c_%d(x0) =", j)
+    display(jth_sparse_congrad(nlp, nlp.x0, j)); @printf("\n")
+  end
+  @printf "J(x0) = \n";      display(J); @printf("\n")
+  @printf "∇²L(x0,y0) = \n"; display(H); @printf("\n")
 
-@printf "f(x0) = %f\n" f
-@printf "∇f(x0) = "; print_array(g)
-@printf "c(x0) = "; print_array(c)
-for j = 1 : nlp.ncon
-  println("∇c_$j(x0) =")
-  println(jth_sparse_congrad(nlp, nlp.x0, j))
-end
-@printf "J(x0) = \n"; println(J)
-@printf "∇²L(x0,y0) = \n"; println(H)
+  e = ones(nlp.nvar)
+  for j = 1 : nlp.ncon
+    Hje = jth_hprod(nlp, nlp.x0, e, j)
+    @printf("∇²c_%d(x0) * e =", j); display(Hje'); @printf("\n")
+  end
 
-e = ones(nlp.nvar)
-for j = 1 : nlp.ncon
-  println("∇²c_$j(x0) * e =");
-  println(jth_hprod(nlp, nlp.x0, e, j))
+  ghje = ghjvprod(nlp, nlp.x0, g, e)
+  @printf "(∇f(x0), ∇²c_j(x0) * e) = "; display(ghje'); @printf("\n")
 end
 
-ghje = ghjvprod(nlp, nlp.x0, g, e)
-@printf "(∇f(x0), ∇²c_j(x0) * e) = "; print_array(ghje)
+hs33 = AmplModel("hs033.nl")
+rosenbrock = AmplModel("rosenbr.nl")
+exercise_ampl_model(rosenbrock)
+exercise_ampl_model(hs33)
+

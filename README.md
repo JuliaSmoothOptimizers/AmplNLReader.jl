@@ -23,12 +23,33 @@ Suppose you have an AMPL model represented by the model and data files `mymodel.
 
     ampl -ogmymodel mymodel.mod mymodel.dat
 
-In Julia, create an instance of `AmplModel` representing your model
+For example:
 
-    julia> include("ampl.jl")
-    julia> mymodel = AmplModel("mymodel.nl")
+````Julia
+julia> include("ampl.jl")
 
-At this point, you can examine the problem dimensions using `mymodel.nvar`, `mymodel.ncon`, etc.
+julia> hs33 = AmplModel("hs033.nl")
+Minimization problem hs033.nl
+nvar = 3, ncon = 2 (2 linear)
+
+julia> print(hs33)
+Minimization problem hs033.nl
+nvar = 3, ncon = 2 (2 linear)
+lvar = 1x3 Array{Float64,2}:
+ 0.0  0.0  0.0
+uvar = 1x3 Array{Float64,2}:
+ Inf  Inf  5.0
+lcon = 1x2 Array{Float64,2}:
+ -Inf  4.0
+ucon = 1x2 Array{Float64,2}:
+ 0.0  Inf
+x0 = 1x3 Array{Float64,2}:
+ 0.0  0.0  3.0
+y0 = 1x2 Array{Float64,2}:
+ -0.0  -0.0
+````
+
+There is preliminary support for holding multiple models in memory simultaneously. This should be transparent to the user.
 
 ## Optimization Problems
 
@@ -36,7 +57,7 @@ At this point, you can examine the problem dimensions using `mymodel.nvar`, `mym
 
     optimize f(x)  subject to l ≤ x ≤ u,  L ≤ c(x) ≤ U,
 
-where `f` is the objective function, `l` and `u` are vectors of lower and upper bounds on the variables, and `L` and `U` are vectors of lower and upper bounds on the general constraints.
+where `f` is the objective function, `c` is the (vector-valued) constraint function, `l` and `u` are vectors of lower and upper bounds on the variables, and `L` and `U` are vectors of lower and upper bounds on the general constraints.
 
 ## Attributes
 
@@ -68,20 +89,20 @@ The following table lists the methods associated to an `AmplModel`. See [Hooking
 
 Method                          | Notes
 --------------------------------|--------------------------------
-`varscale(nlp, s)`                | Scale the vector of variables by the vector `s`
-`obj(nlp, x)`                     | Evaluate the objective function at `x`
-`grad(nlp, x)`                    | Evaluate the objective function gradient at `x`
-`lagscale(nlp, s)`                | Set the scaling factor in the Lagrangian
-`conscale(nlp, s)`                | Scale the vector of constraints by the vector `s`
-`cons(nlp, x)`                    | Evaluate the vector of constraints at `x`
-`jth_con(nlp, x, j)`              | Evaluate the `j`-th constraint at `x`
-`jth_congrad(nlp, x, j)`          | Evaluate the `j`-th constraint gradient at `x`
-`jth_sparse_congrad(nlp, x, j)`   | Evaluate the `j`-th constraint sparse gradient at `x`
-`jac(nlp, x)`                     | Evaluate the sparse Jacobian of the constraints at `x`
-`hprod(nlp, x, v, y=y0, w=1)` | Evaluate the product of the Hessian of the Lagrangian at (`x`,`y`) with `v` using the objective weight `w`
-`jth_hprod(nlp, x, v, j)`         | Compute the product of the Hessian of the `j`-th constraint at `x` with `v`
-`ghjvprod(nlp, x, g, v)`          | Compute the vector of dot products (`g`, `Hj*v`)
-`hess(nlp, x, y=y0, w=1.)`     | Evaluate the sparse Hessian of the Lagrangian at (`x`,`y`) using the objective weight `w`
+`varscale(nlp, s)`              | Scale the vector of variables by the vector `s`
+`obj(nlp, x)`                   | Evaluate the objective function at `x`
+`grad(nlp, x)`                  | Evaluate the objective function gradient at `x`
+`lagscale(nlp, s)`              | Set the scaling factor in the Lagrangian
+`conscale(nlp, s)`              | Scale the vector of constraints by the vector `s`
+`cons(nlp, x)`                  | Evaluate the vector of constraints at `x`
+`jth_con(nlp, x, j)`            | Evaluate the `j`-th constraint at `x`
+`jth_congrad(nlp, x, j)`        | Evaluate the `j`-th constraint gradient at `x`
+`jth_sparse_congrad(nlp, x, j)` | Evaluate the `j`-th constraint sparse gradient at `x`
+`jac(nlp, x)`                   | Evaluate the sparse Jacobian of the constraints at `x`
+`hprod(nlp, x, v, y=y0, w=1)`   | Evaluate the product of the Hessian of the Lagrangian at (`x`,`y`) with `v` using the objective weight `w`
+`jth_hprod(nlp, x, v, j)`       | Compute the product of the Hessian of the `j`-th constraint at `x` with `v`
+`ghjvprod(nlp, x, g, v)`        | Compute the vector of dot products (`g`, `Hj*v`)
+`hess(nlp, x, y=y0, w=1.)`      | Evaluate the sparse Hessian of the Lagrangian at (`x`,`y`) using the objective weight `w`
 
 ## Missing Methods
 
@@ -90,6 +111,6 @@ Method                          | Notes
 
 ## Todo
 
-* Support for [multiple problems at once](http://ampl.com/REFS/HOOKING/index.html#Multipleproblemsandmultiplethreads)
+* Support problems with multiple objectives.
 
 [![GPLv3](http://www.gnu.org/graphics/gplv3-88x31.png)](http://www.gnu.org/licenses/gpl.html "GPLv3")
