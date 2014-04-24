@@ -112,25 +112,21 @@ end
 import Base.show, Base.print
 function show(io :: IO, nlp :: AmplModel)
   s  = sprint_formatted (nlp.minimize ? "Minimization " : "Maximization ")
-  s *= @sprintf "problem %s\n" nlp.name
-  s *= @sprintf "nvar = %d, ncon = %d (%d linear)\n" nlp.nvar nlp.ncon nlp.nlc
+  s *= @sprintf("problem %s\n", nlp.name)
+  s *= @sprintf("nvar = %d, ncon = %d (%d linear)\n", nlp.nvar, nlp.ncon, nlp.nlc)
   print(io, s)
 end
 
 function print(io :: IO, nlp :: AmplModel)
   print_formatted (nlp.minimize ? "Minimization " : "Maximization ")
-  @printf "problem %s\n" nlp.name
-  @printf "nvar = %d, ncon = %d (%d linear)\n" nlp.nvar nlp.ncon nlp.nlc
-  @printf "lvar = "; print_array(nlp.lvar)
-  @printf "uvar = "; print_array(nlp.uvar)
-  @printf "lcon = "; print_array(nlp.lcon)
-  @printf "ucon = "; print_array(nlp.ucon)
-  @printf "x0 = ";   print_array(nlp.x0)
-  @printf "y0 = ";   print_array(nlp.y0)
-end
-
-function display(d :: Display, m :: MIME"text/plain", nlp :: AmplModel)
-  print(d.io, nlp)
+  @printf("problem %s\n", nlp.name)
+  @printf("nvar = %d, ncon = %d (%d linear)\n", nlp.nvar, nlp.ncon, nlp.nlc)
+  @printf("lvar = "); display(nlp.lvar'); @printf("\n")
+  @printf("uvar = "); display(nlp.uvar'); @printf("\n")
+  @printf("lcon = "); display(nlp.lcon'); @printf("\n")
+  @printf("ucon = "); display(nlp.ucon'); @printf("\n")
+  @printf("x0 = ");   display(nlp.x0'); @printf("\n")
+  @printf("y0 = ");   display(nlp.y0'); @printf("\n")
 end
 
 # Scaling AmplModel instances.
