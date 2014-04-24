@@ -23,12 +23,33 @@ Suppose you have an AMPL model represented by the model and data files `mymodel.
 
     ampl -ogmymodel mymodel.mod mymodel.dat
 
-In Julia, create an instance of `AmplModel` representing your model
+For example:
 
-    julia> include("ampl.jl")
-    julia> mymodel = AmplModel("mymodel.nl")
+````Julia
+julia> include("ampl.jl")
 
-At this point, you can examine the problem dimensions using `mymodel.nvar`, `mymodel.ncon`, etc. There is preliminary support for holding multiple models in memory simultaneously. This should be transparent to the user.
+julia> hs33 = AmplModel("hs033.nl")
+Minimization problem hs033.nl
+nvar = 3, ncon = 2 (2 linear)
+
+julia> print(hs33)
+Minimization problem hs033.nl
+nvar = 3, ncon = 2 (2 linear)
+lvar = 1x3 Array{Float64,2}:
+ 0.0  0.0  0.0
+uvar = 1x3 Array{Float64,2}:
+ Inf  Inf  5.0
+lcon = 1x2 Array{Float64,2}:
+ -Inf  4.0
+ucon = 1x2 Array{Float64,2}:
+ 0.0  Inf
+x0 = 1x3 Array{Float64,2}:
+ 0.0  0.0  3.0
+y0 = 1x2 Array{Float64,2}:
+ -0.0  -0.0
+````
+
+There is preliminary support for holding multiple models in memory simultaneously. This should be transparent to the user.
 
 ## Optimization Problems
 
@@ -36,7 +57,7 @@ At this point, you can examine the problem dimensions using `mymodel.nvar`, `mym
 
     optimize f(x)  subject to l ≤ x ≤ u,  L ≤ c(x) ≤ U,
 
-where `f` is the objective function, `l` and `u` are vectors of lower and upper bounds on the variables, and `L` and `U` are vectors of lower and upper bounds on the general constraints.
+where `f` is the objective function, `c` is the (vector-valued) constraint function, `l` and `u` are vectors of lower and upper bounds on the variables, and `L` and `U` are vectors of lower and upper bounds on the general constraints.
 
 ## Attributes
 
@@ -90,6 +111,6 @@ Method                          | Notes
 
 ## Todo
 
-* Support for multiple objectives.
+* Support problems with multiple objectives.
 
 [![GPLv3](http://www.gnu.org/graphics/gplv3-88x31.png)](http://www.gnu.org/licenses/gpl.html "GPLv3")
