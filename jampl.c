@@ -6,12 +6,7 @@
 
 #include "jampl.h"
 
-// ==========================================================================
-
-//
-//                    M o d u l e   f u n c t i o n s
-
-// ==========================================================================
+// Module functions.
 
 void *jampl_init(char *stub) {
     ASL_pfgh *asl = (ASL_pfgh*)ASL_alloc(ASL_read_pfgh);
