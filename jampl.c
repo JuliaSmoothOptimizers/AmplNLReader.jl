@@ -250,7 +250,7 @@ jl_tuple_t *jampl_jac(void *asl, double *x) {
 
 // Hessian.
 
-double *jampl_hprod(void *asl, double *x, double *y, double *v, double w) {
+double *jampl_hprod(void *asl, double *y, double *v, double w) {
   ASL *this_asl = (ASL *)asl;
   int this_nvar = this_asl->i.n_var_;
   double *hv = (double *)Malloc(this_nvar * sizeof(real));
@@ -304,7 +304,7 @@ double *jampl_ghjvprod(void *asl, double *x, double *g, double *v) {
 }
 
 // Return Hessian at (x,y) in triplet form (rows, vals, cols).
-jl_tuple_t *jampl_hess(void *asl, double *x, double *y, double w) {
+jl_tuple_t *jampl_hess(void *asl, double *y, double w) {
   ASL *this_asl = (ASL *)asl;
   double ow[1];  // Objective weight.
   size_t nnzh = (size_t)((*(this_asl->p.Sphset))(this_asl, 0, -1, 1, 1, 1)); // nobj=-1 so ow takes precendence.
