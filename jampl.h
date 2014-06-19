@@ -38,6 +38,7 @@ double *jampl_cons(    void *asl, double *x);
 double  jampl_jcon(    void *asl, double *x, int j);
 double *jampl_jcongrad(void *asl, double *x, int j);
 double *jampl_hprod(   void *asl, double *y, double *v, double w);
+double *jampl_hvcompd( void *asl, double *v, int nobj);
 double *jampl_ghjvprod(void *asl, double *g, double *v);
 
 // Functions that return a Julia-specific value.

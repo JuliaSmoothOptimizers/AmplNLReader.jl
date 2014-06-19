@@ -262,12 +262,19 @@ double *jampl_hprod(void *asl, double *y, double *v, double w) {
   return hv;
 }
 
-double *jampl_ghjvprod(void *asl, double *x, double *g, double *v) {
+double *jampl_hvcompd(void *asl, double *v, int nobj) {
+  ASL *this_asl = (ASL *)asl;
+  int this_nvar = this_asl->i.n_var_;
+  double *hv = (double *)Malloc(this_nvar * sizeof(real));
+  (*(this_asl->p.Hvcompd))(this_asl, hv, v, nobj);
+  return hv;
+}
+
+double *jampl_ghjvprod(void *asl, double *g, double *v) {
   ASL *this_asl = (ASL *)asl;
   int this_ncon = this_asl->i.n_con_;
   int this_nvar = this_asl->i.n_var_;
   int this_nlc  = this_asl->i.nlc_;
-  double *y     = (double *)Malloc(this_ncon * sizeof(real));
   double *hv    = (double *)Malloc(this_nvar * sizeof(real));
   double *ghjv  = (double *)Malloc(this_ncon * sizeof(real));
 
@@ -275,26 +282,15 @@ double *jampl_ghjvprod(void *asl, double *x, double *g, double *v) {
   double prod;
   int i, j;
 
-  for (j = 0 ; j < this_ncon ; j++) y[j] = 0.;
-
   // Process nonlinear constraints.
   for (j = 0 ; j < this_nlc ; j++) {
-    // Set vector of multipliers to (0, 0, ..., -1, ..., 0).
-    y[j] = -1.;
-
-    // Compute hv = Hj * v by setting OW to NULL.
-    hvpinit_ASL(this_asl, this_asl->p.ihd_limit_, 0, NULL, y);
-    (*(this_asl->p.Hvcomp))(this_asl, hv, v, 0, NULL, y);
+    (*(this_asl->p.Hvcompd))(this_asl, hv, v, j);
 
     // Compute dot product g'Hi*v. Should use BLAS.
     for (i = 0, prod = 0 ; i < this_nvar ; i++)
       prod += (hv[i] * g[i]);
     ghjv[j] = prod;
-
-    // Reset j-th multiplier.
-    y[j] = 0.;
   }
-  free(y);
   free(hv);
 
   // All terms corresponding to linear constraints are zero.

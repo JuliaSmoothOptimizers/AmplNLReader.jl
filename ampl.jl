@@ -264,6 +264,7 @@ end
 function jth_hprod(nlp :: AmplModel,
                 x :: Array{Float64,1}, v :: Array{Float64,1}, j :: Int)
   # Compute the product of the Hessian of the j-th constraint at x with v.
+  # If j=0, compute the product of the Hessian of the objective at x with v.
   # Note: x is in fact not used.
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
@@ -271,9 +272,15 @@ function jth_hprod(nlp :: AmplModel,
   if length(v) < nlp.nvar
     error("v must have length at least $(nlp.nvar)")
   end
-  ej = zeros(nlp.ncon,);
-  ej[j] = 1;
-  hprod(nlp, x, v, y=ej);
+  if j < 0 | j > nlp.ncon
+    error("expected 0 ≤ j ≤ $(nlp.ncon)")
+  end
+  # Require that Julia be responsible for freeing up this chunk of memory.
+  Hv = pointer_to_array(@jampl_call(:jampl_hvcompd, Ptr{Float64},
+                                     (Ptr{Void}, Ptr{Float64}, Int),
+                                      nlp.__asl, v,            j-1),
+                         (nlp.nvar,), true)
+  return (j > 0) ? -Hv : Hv  # lagscale() flipped the sign of each constraint.
 end
 
 function ghjvprod(nlp :: AmplModel,
@@ -291,10 +298,11 @@ function ghjvprod(nlp :: AmplModel,
     error("v must have length at least $(nlp.nvar)")
   end
   # Require that Julia be responsible for freeing up this chunk of memory.
-  pointer_to_array(@jampl_call(:jampl_ghjvprod, Ptr{Float64},
-                               (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
-                                nlp.__asl, x,            g,            v),
-                   (nlp.ncon,), true)
+  gHv = pointer_to_array(@jampl_call(:jampl_ghjvprod, Ptr{Float64},
+                                     (Ptr{Void}, Ptr{Float64}, Ptr{Float64}),
+                                      nlp.__asl, g,            v),
+                         (nlp.ncon,), true)
+  return -gHv  # lagscale() flipped the sign of each constraint.
 end
 
 function hess(nlp :: AmplModel,
