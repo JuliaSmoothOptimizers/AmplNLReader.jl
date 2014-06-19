@@ -37,10 +37,11 @@ double *jampl_grad(    void *asl, double *x);
 double *jampl_cons(    void *asl, double *x);
 double  jampl_jcon(    void *asl, double *x, int j);
 double *jampl_jcongrad(void *asl, double *x, int j);
-double *jampl_hprod(   void *asl, double *x, double *y, double *v, double w);
-double *jampl_ghjvprod(void *asl, double *x, double *g, double *v);
+double *jampl_hprod(   void *asl, double *y, double *v, double w);
+double *jampl_hvcompd( void *asl, double *v, int nobj);
+double *jampl_ghjvprod(void *asl, double *g, double *v);
 
 // Functions that return a Julia-specific value.
 jl_tuple_t *jampl_sparse_congrad(void *asl, double *x, int j);
-jl_tuple_t *jampl_jac(void *asl, double *x);
-jl_tuple_t *jampl_hess(void *asl, double *x, double *y, double w);
+jl_tuple_t *jampl_jac( void *asl, double *x);
+jl_tuple_t *jampl_hess(void *asl, double *y, double w);
