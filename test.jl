@@ -23,7 +23,7 @@ function exercise_ampl_model(nlp :: AmplModel)
   e = ones(nlp.nvar)
   for j = 1 : nlp.ncon
     Hje = jth_hprod(nlp, nlp.x0, e, j)
-    @printf("∇²c_%d(x0) * e =", j); display(Hje'); @printf("\n")
+    @printf("∇²c_%d(x0) * e = ", j); display(Hje'); @printf("\n")
   end
 
   ghje = ghjvprod(nlp, nlp.x0, g, e)
