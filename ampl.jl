@@ -40,14 +40,16 @@ type AmplModel
   uvar  :: Array{Float64,1}  # vector of upper bounds
 
   ncon  :: Int               # total number of general constraints
-  nlc   :: Int               # number of linear constraints
-  nlnc  :: Int               # number of nonlinear network constraints
+  nlin  :: Int               # number of linear constraints
+  nnln  :: Int               # number of nonlinear general constraints
+  nnet  :: Int               # number of nonlinear network constraints
   y0    :: Array{Float64,1}  # initial Lagrange multipliers
   lcon  :: Array{Float64,1}  # vector of constraint lower bounds
   ucon  :: Array{Float64,1}  # vector of constraint upper bounds
 
   lin   :: Range1{Int64}     # indices of linear constraints
-  nlin  :: Range1{Int64}     # indices of nonlinear constraints (not network)
+  nln   :: Range1{Int64}     # indices of nonlinear constraints
+  net   :: Range1{Int64}     # indices of nonlinear network constraints
 
   nnzj  :: Int               # number of nonzeros in the sparse Jacobian
   nnzh  :: Int               # number of nonzeros in the sparse Hessian
@@ -75,8 +77,9 @@ type AmplModel
                             (nvar,), false);
 
     ncon = int(@jampl_call(:jampl_ncon, Int32, (Ptr{Void},), asl));
-    nlc  = int(@jampl_call(:jampl_nlc,  Int32, (Ptr{Void},), asl));
-    nlnc = int(@jampl_call(:jampl_nlnc, Int32, (Ptr{Void},), asl));
+    nnet = int(@jampl_call(:jampl_nlnc, Int32, (Ptr{Void},), asl));
+    nnln = int(@jampl_call(:jampl_nlc,  Int32, (Ptr{Void},), asl)) - nnet;
+    nlin = ncon - nnln - nnet
     y0   = pointer_to_array(@jampl_call(:jampl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
     lcon = pointer_to_array(@jampl_call(:jampl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
@@ -84,14 +87,15 @@ type AmplModel
     ucon = pointer_to_array(@jampl_call(:jampl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
 
-    lin  = nlc+nlnc+1 : ncon
-    nlin = 1 : nlc
+    nln  = 1 : nnln
+    net  = nnln+1 : nnln+nnet
+    lin  = nnln+nnet+1 : ncon
 
     nnzj = int(@jampl_call(:jampl_nnzj, Int32, (Ptr{Void},), asl));
     nnzh = int(@jampl_call(:jampl_nnzh, Int32, (Ptr{Void},), asl));
 
-    nlp = new(asl, nvar, x0, lvar, uvar, ncon, nlc, nlnc, y0, lcon, ucon,
-              lin, nlin, nnzj, nnzh, minimize, islp, stub)
+    nlp = new(asl, nvar, x0, lvar, uvar, ncon, nlin, nnln, nnet, y0, lcon, ucon,
+              lin, nln, net, nnzj, nnzh, minimize, islp, stub)
 
     lagscale(nlp, -1.0)  # Lagrangian L(x,y) = f(x) - ∑ yi ci(x)
 
@@ -113,20 +117,29 @@ import Base.show, Base.print
 function show(io :: IO, nlp :: AmplModel)
   s  = sprint_formatted (nlp.minimize ? "Minimization " : "Maximization ")
   s *= @sprintf("problem %s\n", nlp.name)
-  s *= @sprintf("nvar = %d, ncon = %d (%d linear)\n", nlp.nvar, nlp.ncon, nlp.nlc)
+  s *= @sprintf("nvar = %d, ncon = %d (%d linear)\n", nlp.nvar, nlp.ncon, nlp.nlin)
   print(io, s)
 end
 
 function print(io :: IO, nlp :: AmplModel)
   print_formatted (nlp.minimize ? "Minimization " : "Maximization ")
   @printf("problem %s\n", nlp.name)
-  @printf("nvar = %d, ncon = %d (%d linear)\n", nlp.nvar, nlp.ncon, nlp.nlc)
+  @printf("nvar = %d, ncon = %d (%d linear)\n", nlp.nvar, nlp.ncon, nlp.nlin)
   @printf("lvar = "); display(nlp.lvar'); @printf("\n")
   @printf("uvar = "); display(nlp.uvar'); @printf("\n")
   @printf("lcon = "); display(nlp.lcon'); @printf("\n")
   @printf("ucon = "); display(nlp.ucon'); @printf("\n")
   @printf("x0 = ");   display(nlp.x0'); @printf("\n")
   @printf("y0 = ");   display(nlp.y0'); @printf("\n")
+  if nlp.nlin > 0
+    @printf("linear constraints:    "); display(nlp.lin); @printf("\n");
+  end
+  if nlp.nnln > 0
+    @printf("nonlinear constraints: "); display(nlp.nln); @printf("\n");
+  end
+  if nlp.nnet > 0
+    @printf("network constraints:   "); display(nlp.net); @printf("\n");
+  end
 end
 
 # Scaling AmplModel instances.
