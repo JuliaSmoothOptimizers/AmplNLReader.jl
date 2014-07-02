@@ -30,11 +30,11 @@ julia> include("ampl.jl")
 
 julia> hs33 = AmplModel("hs033.nl")
 Minimization problem hs033.nl
-nvar = 3, ncon = 2 (2 linear)
+nvar = 3, ncon = 2 (0 linear)
 
 julia> print(hs33)
 Minimization problem hs033.nl
-nvar = 3, ncon = 2 (2 linear)
+nvar = 3, ncon = 2 (0 linear)
 lvar = 1x3 Array{Float64,2}:
  0.0  0.0  0.0
 uvar = 1x3 Array{Float64,2}:
@@ -70,13 +70,15 @@ Attribute   | Type               | Notes
 `lvar`      | `Array{Float64,1}` | vector of lower bounds
 `uvar`      | `Array{Float64,1}` | vector of upper bounds
 `ncon`      | `Int             ` | total number of general constraints
-`nlc `      | `Int             ` | number of linear constraints
-`nlnc`      | `Int             ` | number of nonlinear network constraints
+`nlin `     | `Int             ` | number of linear constraints
+`nnln`      | `Int             ` | number of nonlinear general constraints
+`nnet`      | `Int             ` | number of nonlinear network constraints
 `y0  `      | `Array{Float64,1}` | initial Lagrange multipliers
 `lcon`      | `Array{Float64,1}` | vector of constraint lower bounds
 `ucon`      | `Array{Float64,1}` | vector of constraint upper bounds
 `lin `      | `Range1{Int64}   ` | indices of linear constraints
-`nlin`      | `Range1{Int64}   ` | indices of nonlinear constraints (not network)
+`nln`       | `Range1{Int64}   ` | indices of nonlinear constraints (not network)
+`nnet`      | `Range1{Int64}   ` | indices of nonlinear network constraints
 `nnzj`      | `Int             ` | number of nonzeros in the sparse Jacobian
 `nnzh`      | `Int             ` | number of nonzeros in the sparse Hessian
 `minimize`  | `Bool            ` | true if `optimize == minimize`
