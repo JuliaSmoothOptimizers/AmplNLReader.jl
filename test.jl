@@ -33,5 +33,6 @@ end
 hs33 = AmplModel("hs033.nl")
 rosenbrock = AmplModel("rosenbr.nl")
 exercise_ampl_model(rosenbrock)
+hs9 = AmplModel("hs009.nl")
 exercise_ampl_model(hs33)
-
+exercise_ampl_model(hs9)
