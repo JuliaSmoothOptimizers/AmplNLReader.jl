@@ -35,17 +35,33 @@ type AmplModel
   __asl :: Ptr{Void}         # pointer to internal ASL structure. Do not touch.
 
   nvar  :: Int               # number of variables
+  ncon  :: Int               # total number of general constraints
   x0    :: Array{Float64,1}  # initial guess
+  y0    :: Array{Float64,1}  # initial Lagrange multipliers
+
   lvar  :: Array{Float64,1}  # vector of lower bounds
   uvar  :: Array{Float64,1}  # vector of upper bounds
 
-  ncon  :: Int               # total number of general constraints
+  ifix  :: Array{Int64,1}    # indices of fixed variables
+  ilow  :: Array{Int64,1}    # indices of variables with lower bound only
+  iupp  :: Array{Int64,1}    # indices of variables with upper bound only
+  irng  :: Array{Int64,1}    # indices of variables with lower and upper bound (range)
+  ifree :: Array{Int64,1}    # indices of free variables
+  iinf  :: Array{Int64,1}    # indices of infeasible bounds
+
+  lcon  :: Array{Float64,1}  # vector of constraint lower bounds
+  ucon  :: Array{Float64,1}  # vector of constraint upper bounds
+
+  jfix  :: Array{Int64,1}    # indices of equality constraints
+  jlow  :: Array{Int64,1}    # indices of constraints of the form c(x) ≥ cl
+  jupp  :: Array{Int64,1}    # indices of constraints of the form c(x) ≤ cu
+  jrng  :: Array{Int64,1}    # indices of constraints of the form cl ≤ c(x) ≤ cu
+  jfree :: Array{Int64,1}    # indices of "free" constraints (there shouldn't be any)
+  jinf  :: Array{Int64,1}    # indices of
+
   nlin  :: Int               # number of linear constraints
   nnln  :: Int               # number of nonlinear general constraints
   nnet  :: Int               # number of nonlinear network constraints
-  y0    :: Array{Float64,1}  # initial Lagrange multipliers
-  lcon  :: Array{Float64,1}  # vector of constraint lower bounds
-  ucon  :: Array{Float64,1}  # vector of constraint upper bounds
 
   lin   :: Range1{Int64}     # indices of linear constraints
   nln   :: Range1{Int64}     # indices of nonlinear constraints
@@ -69,23 +85,40 @@ type AmplModel
     islp = bool(@jampl_call(:jampl_islp, Int32, (Ptr{Void},), asl));
 
     nvar = int(@jampl_call(:jampl_nvar, Int32, (Ptr{Void},), asl));
+    ncon = int(@jampl_call(:jampl_ncon, Int32, (Ptr{Void},), asl));
+
     x0   = pointer_to_array(@jampl_call(:jampl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
+    y0   = pointer_to_array(@jampl_call(:jampl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
+                            (ncon,), false);
+
     lvar = pointer_to_array(@jampl_call(:jampl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
     uvar = pointer_to_array(@jampl_call(:jampl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
 
-    ncon = int(@jampl_call(:jampl_ncon, Int32, (Ptr{Void},), asl));
-    nnet = int(@jampl_call(:jampl_nlnc, Int32, (Ptr{Void},), asl));
-    nnln = int(@jampl_call(:jampl_nlc,  Int32, (Ptr{Void},), asl)) - nnet;
-    nlin = ncon - nnln - nnet
-    y0   = pointer_to_array(@jampl_call(:jampl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
-                            (ncon,), false);
+    ifix = find(lvar .== uvar);
+    ilow = find((lvar .> -Inf) & (uvar .== Inf));
+    iupp = find((lvar .== -Inf) & (uvar .< Inf));
+    irng = find((lvar .> -Inf) & (uvar .< Inf) & (lvar .< uvar));
+    ifree = find((lvar .== -Inf) & (uvar .== Inf));
+    iinf = find(lvar .> uvar);
+
     lcon = pointer_to_array(@jampl_call(:jampl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
     ucon = pointer_to_array(@jampl_call(:jampl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
+
+    jfix = find(lcon .== ucon);
+    jlow = find((lcon .> -Inf) & (ucon .== Inf));
+    jupp = find((lcon .== -Inf) & (ucon .< Inf));
+    jrng = find((lcon .> -Inf) & (ucon .< Inf) & (lcon .< ucon));
+    jfree = find((lcon .== -Inf) & (ucon .== Inf));
+    jinf = find(lcon .> ucon);
+
+    nnet = int(@jampl_call(:jampl_nlnc, Int32, (Ptr{Void},), asl));
+    nnln = int(@jampl_call(:jampl_nlc,  Int32, (Ptr{Void},), asl)) - nnet;
+    nlin = ncon - nnln - nnet
 
     nln  = 1 : nnln
     net  = nnln+1 : nnln+nnet
@@ -94,8 +127,11 @@ type AmplModel
     nnzj = int(@jampl_call(:jampl_nnzj, Int32, (Ptr{Void},), asl));
     nnzh = int(@jampl_call(:jampl_nnzh, Int32, (Ptr{Void},), asl));
 
-    nlp = new(asl, nvar, x0, lvar, uvar, ncon, nlin, nnln, nnet, y0, lcon, ucon,
-              lin, nln, net, nnzj, nnzh, minimize, islp, stub)
+    nlp = new(asl, nvar, ncon, x0, y0,
+              lvar, uvar, ifix, ilow, iupp, irng, ifree, iinf,
+              lcon, ucon, jfix, jlow, jupp, jrng, jfree, jinf,
+              nlin, nnln, nnet, lin, nln, net,
+              nnzj, nnzh, minimize, islp, stub)
 
     lagscale(nlp, -1.0)  # Lagrangian L(x,y) = f(x) - ∑ yi ci(x)
 
