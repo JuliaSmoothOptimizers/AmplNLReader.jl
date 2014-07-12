@@ -57,7 +57,7 @@ type AmplModel
   jupp  :: Array{Int64,1}    # indices of constraints of the form c(x) ≤ cu
   jrng  :: Array{Int64,1}    # indices of constraints of the form cl ≤ c(x) ≤ cu
   jfree :: Array{Int64,1}    # indices of "free" constraints (there shouldn't be any)
-  jinf  :: Array{Int64,1}    # indices of
+  jinf  :: Array{Int64,1}    # indices of the visibly infeasible constraints
 
   nlin  :: Int               # number of linear constraints
   nnln  :: Int               # number of nonlinear general constraints
