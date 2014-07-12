@@ -69,6 +69,12 @@ Attribute   | Type               | Notes
 `x0  `      | `Array{Float64,1}` | initial guess
 `lvar`      | `Array{Float64,1}` | vector of lower bounds
 `uvar`      | `Array{Float64,1}` | vector of upper bounds
+`ifix`      | `Array{Int64,1}`   | indices of fixed variables
+`ilow`      | `Array{Int64,1}`   | indices of variables with lower bound only
+`iupp`      | `Array{Int64,1}`   | indices of variables with upper bound only
+`irng`      | `Array{Int64,1}`   | indices of variables with lower and upper bound (range)
+`ifree`     | `Array{Int64,1}`   | indices of free variables
+`iinf`      | `Array{Int64,1}`   | indices of infeasible bounds
 `ncon`      | `Int             ` | total number of general constraints
 `nlin `     | `Int             ` | number of linear constraints
 `nnln`      | `Int             ` | number of nonlinear general constraints
@@ -79,6 +85,12 @@ Attribute   | Type               | Notes
 `lin `      | `Range1{Int64}   ` | indices of linear constraints
 `nln`       | `Range1{Int64}   ` | indices of nonlinear constraints (not network)
 `nnet`      | `Range1{Int64}   ` | indices of nonlinear network constraints
+`jfix`      | `Array{Int64,1}`   | indices of equality constraints
+`jlow`      | `Array{Int64,1}`   | indices of constraints of the form c(x) ≥ cl
+`jupp`      | `Array{Int64,1}`   | indices of constraints of the form c(x) ≤ cu
+`jrng`      | `Array{Int64,1}`   | indices of constraints of the form cl ≤ c(x) ≤ cu
+`jfree`     | `Array{Int64,1}`   | indices of "free" constraints (there shouldn't be any)
+`jinf`      | `Array{Int64,1}`   | indices of the visibly infeasible constraints
 `nnzj`      | `Int             ` | number of nonzeros in the sparse Jacobian
 `nnzh`      | `Int             ` | number of nonzeros in the sparse Hessian
 `minimize`  | `Bool            ` | true if `optimize == minimize`
