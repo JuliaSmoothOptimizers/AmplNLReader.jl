@@ -117,6 +117,7 @@ Method                          | Notes
 `jth_hprod(nlp, x, v, j)`       | Compute the product of the Hessian of the `j`-th constraint at `x` with `v`
 `ghjvprod(nlp, x, g, v)`        | Compute the vector of dot products (`g`, `Hj*v`)
 `hess(nlp, x, y=y0, w=1.)`      | Evaluate the sparse Hessian of the Lagrangian at (`x`,`y`) using the objective weight `w`
+`write_sol(nlp, msg, x, y)`     | Write primal and dual solutions to file
 
 ## Missing Methods
 
