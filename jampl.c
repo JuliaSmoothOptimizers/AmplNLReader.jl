@@ -9,30 +9,36 @@
 // Module functions.
 
 void *jampl_init(char *stub) {
-    ASL_pfgh *asl = (ASL_pfgh*)ASL_alloc(ASL_read_pfgh);
-    if (!asl) return NULL;
+  ASL_pfgh *asl = (ASL_pfgh*)ASL_alloc(ASL_read_pfgh);
+  if (!asl) return NULL;
 
-    FILE *ampl_file = jac0dim(stub, (fint)strlen(stub));
+  FILE *ampl_file = jac0dim(stub, (fint)strlen(stub));
 
-    // Allocate room to store problem data
-    if (! (asl->i.X0_    = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
-    if (! (asl->i.LUv_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
-    if (! (asl->i.Uvx_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
-    if (! (asl->i.pi0_   = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
-    if (! (asl->i.LUrhs_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
-    if (! (asl->i.Urhsx_ = (real* )M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
+  // Allocate room to store problem data
+  if (! (asl->i.X0_    = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+  if (! (asl->i.LUv_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+  if (! (asl->i.Uvx_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+  if (! (asl->i.pi0_   = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
+  if (! (asl->i.LUrhs_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
+  if (! (asl->i.Urhsx_ = (real* )M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
 
-    // Read in ASL structure
-    asl->i.want_xpi0_ = 3;        // Read primal and dual estimates
-    pfgh_read(ampl_file , 0);     // pfgh_read closes the file.
+  // Read in ASL structure
+  asl->i.want_xpi0_ = 3;        // Read primal and dual estimates
+  pfgh_read(ampl_file , 0);     // pfgh_read closes the file.
 
-    return (void *)asl;
+  return (void *)asl;
+}
+
+void jampl_write_sol(void *asl, const char *msg, double *x, double *y) {
+  ASL *this_asl = (ASL *)asl;
+  write_sol_ASL(asl, msg, x, y, 0); // Do not handle Option_Info for now.
+  return;
 }
 
 void jampl_finalize(void *asl) {
-    ASL *this_asl = (ASL *)asl;
-    ASL_free((ASL **)(&this_asl));
-    return;
+  ASL *this_asl = (ASL *)asl;
+  ASL_free((ASL **)(&this_asl));
+  return;
 }
 
 // Problem setup.

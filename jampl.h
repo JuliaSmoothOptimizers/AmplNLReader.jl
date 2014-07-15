@@ -11,6 +11,7 @@
 
 void *jampl_init(char *stub);
 void jampl_finalize(void *asl);
+void jampl_write_sol(void *asl, const char *msg, double *x, double *y);
 
 int jampl_objtype(void *asl);
 int jampl_nvar(   void *asl);

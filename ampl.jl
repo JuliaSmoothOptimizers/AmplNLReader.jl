@@ -143,6 +143,18 @@ end
 
 # Methods associated to AmplModel instances.
 
+function write_sol(nlp :: AmplModel, msg :: ASCIIString, x :: Array{Float64,1}, y :: Array{Float64,1})
+  if length(x) != nlp.nvar
+    error("x must have length $(nlp.nvar)")
+  end
+  if length(y) != nlp.ncon
+    error("y must have length $(nlp.ncon)")
+  end
+  @jampl_call(:jampl_write_sol, Void,
+                                (Ptr{Void}, Ptr{Uint8}, Ptr{Float64}, Ptr{Float64}),
+                                nlp.__asl,  msg,        x,            y)
+end
+
 function amplmodel_finalize(nlp :: AmplModel)
   @jampl_call(:jampl_finalize, Void, (Ptr{Void},), nlp.__asl)
 end
