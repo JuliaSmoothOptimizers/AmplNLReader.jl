@@ -9,30 +9,36 @@
 // Module functions.
 
 void *jampl_init(char *stub) {
-    ASL_pfgh *asl = (ASL_pfgh*)ASL_alloc(ASL_read_pfgh);
-    if (!asl) return NULL;
+  ASL_pfgh *asl = (ASL_pfgh*)ASL_alloc(ASL_read_pfgh);
+  if (!asl) return NULL;
 
-    FILE *ampl_file = jac0dim(stub, (fint)strlen(stub));
+  FILE *ampl_file = jac0dim(stub, (fint)strlen(stub));
 
-    // Allocate room to store problem data
-    if (! (asl->i.X0_    = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
-    if (! (asl->i.LUv_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
-    if (! (asl->i.Uvx_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
-    if (! (asl->i.pi0_   = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
-    if (! (asl->i.LUrhs_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
-    if (! (asl->i.Urhsx_ = (real* )M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
+  // Allocate room to store problem data
+  if (! (asl->i.X0_    = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+  if (! (asl->i.LUv_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+  if (! (asl->i.Uvx_   = (real *)M1alloc(asl->i.n_var_ * sizeof(real)))) return NULL;
+  if (! (asl->i.pi0_   = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
+  if (! (asl->i.LUrhs_ = (real *)M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
+  if (! (asl->i.Urhsx_ = (real* )M1alloc(asl->i.n_con_ * sizeof(real)))) return NULL;
 
-    // Read in ASL structure
-    asl->i.want_xpi0_ = 3;        // Read primal and dual estimates
-    pfgh_read(ampl_file , 0);     // pfgh_read closes the file.
+  // Read in ASL structure
+  asl->i.want_xpi0_ = 3;        // Read primal and dual estimates
+  pfgh_read(ampl_file , 0);     // pfgh_read closes the file.
 
-    return (void *)asl;
+  return (void *)asl;
+}
+
+void jampl_write_sol(void *asl, const char *msg, double *x, double *y) {
+  ASL *this_asl = (ASL *)asl;
+  write_sol_ASL(asl, msg, x, y, 0); // Do not handle Option_Info for now.
+  return;
 }
 
 void jampl_finalize(void *asl) {
-    ASL *this_asl = (ASL *)asl;
-    ASL_free((ASL **)(&this_asl));
-    return;
+  ASL *this_asl = (ASL *)asl;
+  ASL_free((ASL **)(&this_asl));
+  return;
 }
 
 // Problem setup.
@@ -173,9 +179,11 @@ jl_tuple_t *jampl_sparse_congrad(void *asl, double *x, int j) {
   jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
   jl_value_t *int64_array_type   = jl_apply_array_type(jl_int64_type,   1);
 
-  jl_array_t *jvals = jl_alloc_array_1d(float64_array_type, nzgj);
-  jl_array_t *jinds = jl_alloc_array_1d(int64_array_type,   nzgj);
+  jl_array_t *jvals = NULL, *jinds = NULL;
   JL_GC_PUSH2(&jvals, &jinds);  // Let Julia worry about these chunks.
+
+  jvals = jl_alloc_array_1d(float64_array_type, nzgj);
+  jinds = jl_alloc_array_1d(int64_array_type,   nzgj);
 
   long   *inds = (long   *)jl_array_data(jinds);
   double *vals = (double *)jl_array_data(jvals);
@@ -196,6 +204,7 @@ jl_tuple_t *jampl_sparse_congrad(void *asl, double *x, int j) {
   jl_tupleset(tuple, 0, jinds);
   jl_tupleset(tuple, 1, jvals);
 
+  JL_GC_POP();
   return tuple;
 }
 
@@ -208,10 +217,12 @@ jl_tuple_t *jampl_jac(void *asl, double *x) {
   jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
   jl_value_t *int64_array_type   = jl_apply_array_type(jl_int64_type,   1);
 
-  jl_array_t *jvals = jl_alloc_array_1d(float64_array_type, (size_t)(this_nzc));
-  jl_array_t *jrows = jl_alloc_array_1d(int64_array_type,   (size_t)(this_nzc));
-  jl_array_t *jcols = jl_alloc_array_1d(int64_array_type,   (size_t)(this_nzc));
+  jl_array_t *jvals = NULL, *jrows = NULL, *jcols = NULL;
   JL_GC_PUSH3(&jvals, &jrows, &jcols);  // Let Julia worry about these chunks.
+
+  jvals = jl_alloc_array_1d(float64_array_type, (size_t)(this_nzc));
+  jrows = jl_alloc_array_1d(int64_array_type,   (size_t)(this_nzc));
+  jcols = jl_alloc_array_1d(int64_array_type,   (size_t)(this_nzc));
 
   long   *rows = (long   *)jl_array_data(jrows);
   long   *cols = (long   *)jl_array_data(jcols);
@@ -228,15 +239,25 @@ jl_tuple_t *jampl_jac(void *asl, double *x) {
     }
 
 #ifdef DEBUG_AMPL_JL
+  printf("AMPL says nzc = %d\n", this_nzc);
+  printf("array lengths are %d\n", jl_array_len(jrows));
+  printf("Error code = %d\n", ne);
   size_t l;
+  int nelts = this_nzc/2 < 4 ? this_nzc/2 : 4;
   printf("J: vals = [ ");
-  for (l = 0; l < jl_array_len(jvals); l++) printf("%8.1e ", vals[l]);
+  for (l = 0; l < nelts; l++) printf("%8.1e ", vals[l]);
+  printf("... ");
+  for (l = 0; l < nelts; l++) printf("%8.1e ", vals[this_nzc - nelts + l]);
   printf("]\n");
   printf("J: rows = [ ");
-  for (l = 0; l < jl_array_len(jrows); l++) printf("%d ", rows[l]);
+  for (l = 0; l < nelts; l++) printf("%d ", rows[l]);
+  printf("... ");
+  for (l = 0; l < nelts; l++) printf("%d ", rows[this_nzc - nelts + l]);
   printf("]\n");
   printf("J: cols = [ ");
-  for (l = 0; l < jl_array_len(jcols); l++) printf("%d ", cols[l]);
+  for (l = 0; l < nelts; l++) printf("%d ", cols[l]);
+  printf("... ");
+  for (l = 0; l < nelts; l++) printf("%d ", cols[this_nzc - nelts + l]);
   printf("]\n");
 #endif
 
@@ -245,6 +266,7 @@ jl_tuple_t *jampl_jac(void *asl, double *x) {
   jl_tupleset(tuple, 1, jcols);
   jl_tupleset(tuple, 2, jvals);
 
+  JL_GC_POP();
   return tuple;
 }
 
@@ -309,10 +331,12 @@ jl_tuple_t *jampl_hess(void *asl, double *y, double w) {
   jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
   jl_value_t *int64_array_type   = jl_apply_array_type(jl_int64_type,   1);
 
-  jl_array_t *jvals = jl_alloc_array_1d(float64_array_type, nnzh);
-  jl_array_t *jrows = jl_alloc_array_1d(int64_array_type,   nnzh);
-  jl_array_t *jcols = jl_alloc_array_1d(int64_array_type,   nnzh);
+  jl_array_t *jvals = NULL, *jrows = NULL, *jcols = NULL;
   JL_GC_PUSH3(&jvals, &jrows, &jcols);  // Let Julia worry about these chunks.
+
+  jvals = jl_alloc_array_1d(float64_array_type, nnzh);
+  jrows = jl_alloc_array_1d(int64_array_type,   nnzh);
+  jcols = jl_alloc_array_1d(int64_array_type,   nnzh);
 
   long   *rows = (long   *)jl_array_data(jrows);
   long   *cols = (long   *)jl_array_data(jcols);
@@ -348,5 +372,6 @@ jl_tuple_t *jampl_hess(void *asl, double *y, double w) {
   jl_tupleset(tuple, 1, jcols);
   jl_tupleset(tuple, 2, jvals);
 
+  JL_GC_POP();
   return tuple;
 }
