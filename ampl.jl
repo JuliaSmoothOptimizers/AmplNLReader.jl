@@ -232,9 +232,9 @@ function grad(nlp :: AmplModel, x :: Array{Float64,1})
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  # Require that Julia be responsible for freeing up this chunk of memory.
-  pointer_to_array(@jampl_call(:jampl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x),
-                   (nlp.nvar,), true)
+  g = Array(Float64, nlp.nvar)
+  @jampl_call(:jampl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, g)
+  return g
 end
 
 function cons(nlp :: AmplModel, x :: Array{Float64,1})
@@ -242,9 +242,9 @@ function cons(nlp :: AmplModel, x :: Array{Float64,1})
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  # Require that Julia be responsible for freeing up this chunk of memory.
-  pointer_to_array(@jampl_call(:jampl_cons, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x),
-                   (nlp.ncon,), true)
+  c = Array(Float64, nlp.ncon)
+  @jampl_call(:jampl_cons, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, c)
+  return c
 end
 
 function jth_con(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
@@ -284,9 +284,13 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  inds, vals = @jampl_call(:jampl_sparse_congrad, Any,
-                           (Ptr{Void}, Ptr{Float64}, Int32),
-                            nlp.__asl, x,            j-1)
+  nnz = @jampl_call(:jampl_sparse_congrad_nnz, Csize_t,
+                     (Ptr{Void}, Cint), nlp.__asl, j-1)
+  inds = Array(Int64, nnz)
+  vals = Array(Float64, nnz)
+  @jampl_call(:jampl_sparse_congrad, Void,
+                           (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}),
+                            nlp.__asl, x,            j-1,   inds,       vals)
   sparsevec(inds, vals, nlp.nvar)
 end
 
@@ -295,7 +299,11 @@ function jac(nlp :: AmplModel, x :: Array{Float64,1})
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  rows, cols, vals = @jampl_call(:jampl_jac, Any, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x)
+  
+  rows = Array(Int64, nlp.nnzj)
+  cols = Array(Int64, nlp.nnzj)
+  vals = Array(Float64, nlp.nnzj)
+  @jampl_call(:jampl_jac, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}), nlp.__asl, x, rows, cols, vals)
   sparse(rows, cols, vals, nlp.ncon, nlp.nvar)
 end
 
@@ -378,8 +386,11 @@ function hess(nlp :: AmplModel,
   if length(y) < nlp.ncon
     error("y must have length at least $(nlp.ncon)")
   end
-  rows, cols, vals = @jampl_call(:jampl_hess, Any,
-                                 (Ptr{Void}, Ptr{Float64}, Float64),
-                                  nlp.__asl, y,            obj_weight)
+  rows = Array(Int64, nlp.nnzh)
+  cols = Array(Int64, nlp.nnzh)
+  vals = Array(Float64, nlp.nnzh)
+  @jampl_call(:jampl_hess, Void,
+                                 (Ptr{Void}, Ptr{Float64}, Float64, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
+                                  nlp.__asl, y, obj_weight, rows, cols, vals)
   sparse(rows, cols, vals, nlp.nvar, nlp.nvar)
 end
