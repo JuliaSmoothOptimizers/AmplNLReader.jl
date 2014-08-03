@@ -15,6 +15,8 @@ function exercise_ampl_model(nlp :: AmplModel)
   @printf("c(x0) = ");  display(c'); @printf("\n")
   for j = 1 : nlp.ncon
     @printf("∇c_%d(x0) =", j)
+    display(jth_congrad(nlp, nlp.x0, j)); @printf("\n")
+    @printf("sparse ∇c_%d(x0) =", j)
     display(jth_sparse_congrad(nlp, nlp.x0, j)); @printf("\n")
   end
   @printf "J(x0) = \n";      display(J); @printf("\n")

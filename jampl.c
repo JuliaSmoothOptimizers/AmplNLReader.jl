@@ -153,14 +153,10 @@ double jampl_jcon(void *asl, double *x, int j) {
   return (*((ASL *)asl)->p.Conival)((ASL *)asl, j, x, &ne);
 }
 
-double *jampl_jcongrad(void *asl, double *x, int j) {
+void jampl_jcongrad(void *asl, double *x, double *g, int j) {
   ASL *this_asl = (ASL *)asl;
-  int this_nvar = this_asl->i.n_var_;
-  double *g = (double *)Malloc(this_nvar * sizeof(real));
-
   fint ne;
   (*(this_asl->p.Congrd))(this_asl, j, x, g, &ne);
-  return g;
 }
 
 size_t jampl_sparse_congrad_nnz(void *asl, int j) {
@@ -209,33 +205,26 @@ void jampl_jac(void *asl, double *x, int64_t *rows, int64_t *cols, double *vals)
 
 // Hessian.
 
-double *jampl_hprod(void *asl, double *y, double *v, double w) {
+void jampl_hprod(void *asl, double *y, double *v, double *hv, double w) {
   ASL *this_asl = (ASL *)asl;
-  int this_nvar = this_asl->i.n_var_;
-  double *hv = (double *)Malloc(this_nvar * sizeof(real));
   double ow[1];  // Objective weight.
 
   ow[0]  = this_asl->i.objtype_[0] ? -w : w;
   hvpinit_ASL(this_asl, this_asl->p.ihd_limit_, 0, NULL, y);
   (*(this_asl->p.Hvcomp))(this_asl, hv, v, -1, ow, y); // nobj=-1 so ow takes precendence.
-  return hv;
 }
 
-double *jampl_hvcompd(void *asl, double *v, int nobj) {
+void jampl_hvcompd(void *asl, double *v, double *hv, int nobj) {
   ASL *this_asl = (ASL *)asl;
-  int this_nvar = this_asl->i.n_var_;
-  double *hv = (double *)Malloc(this_nvar * sizeof(real));
   (*(this_asl->p.Hvcompd))(this_asl, hv, v, nobj);
-  return hv;
 }
 
-double *jampl_ghjvprod(void *asl, double *g, double *v) {
+void jampl_ghjvprod(void *asl, double *g, double *v, double *ghjv) {
   ASL *this_asl = (ASL *)asl;
   int this_ncon = this_asl->i.n_con_;
   int this_nvar = this_asl->i.n_var_;
   int this_nlc  = this_asl->i.nlc_;
   double *hv    = (double *)Malloc(this_nvar * sizeof(real));
-  double *ghjv  = (double *)Malloc(this_ncon * sizeof(real));
 
   fint ne;
   double prod;
@@ -254,8 +243,6 @@ double *jampl_ghjvprod(void *asl, double *g, double *v) {
 
   // All terms corresponding to linear constraints are zero.
   for (j = this_nlc ; j < this_ncon ; j++) ghjv[j] = 0.;
-
-  return ghjv;
 }
 
 // Return Hessian at (x,y) in triplet form (rows, vals, cols).

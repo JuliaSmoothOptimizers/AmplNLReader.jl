@@ -36,10 +36,10 @@ double  jampl_obj(     void *asl, double *x);
 void    jampl_grad(    void *asl, double *x, double *g);
 void    jampl_cons(    void *asl, double *x, double *c);
 double  jampl_jcon(    void *asl, double *x, int j);
-double *jampl_jcongrad(void *asl, double *x, int j);
-double *jampl_hprod(   void *asl, double *y, double *v, double w);
-double *jampl_hvcompd( void *asl, double *v, int nobj);
-double *jampl_ghjvprod(void *asl, double *g, double *v);
+void    jampl_jcongrad(void *asl, double *x, double *g, int j);
+void    jampl_hprod(   void *asl, double *y, double *v, double *hv, double w);
+void    jampl_hvcompd( void *asl, double *v, double *hv, int nobj);
+void    jampl_ghjvprod(void *asl, double *g, double *v, double *ghjv);
 
 size_t jampl_sparse_congrad_nnz(void *asl, int j);
 void jampl_sparse_congrad(void *asl, double *x, int j, int64_t *inds, double *vals);

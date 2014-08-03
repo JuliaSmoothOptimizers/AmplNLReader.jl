@@ -268,11 +268,11 @@ function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  # Require that Julia be responsible for freeing up this chunk of memory.
-  pointer_to_array(@jampl_call(:jampl_jcongrad, Ptr{Float64},
-                               (Ptr{Void}, Ptr{Float64}, Int32),
-                                nlp.__asl, x,            j-1),
-                   (nlp.nvar,), true)
+  g = Array(Float64, nlp.nvar)
+  @jampl_call(:jampl_jcongrad, Ptr{Float64},
+                              (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32),
+                               nlp.__asl, x,            g,            j-1)
+  return g
 end
 
 function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
@@ -323,11 +323,11 @@ function hprod(nlp :: AmplModel,
   if length(v) < nlp.nvar
     error("v must have length at least $(nlp.nvar)")
   end
-  # Require that Julia be responsible for freeing up this chunk of memory.
-  pointer_to_array(@jampl_call(:jampl_hprod, Ptr{Float64},
-                               (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Float64),
-                                nlp.__asl, y,            v,            obj_weight),
-                   (nlp.nvar,), true)
+  hv = Array(Float64, nlp.nvar);
+  @jampl_call(:jampl_hprod, Ptr{Float64},
+                           (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
+                            nlp.__asl, y,            v,            hv,           obj_weight);
+  return hv
 end
 
 function jth_hprod(nlp :: AmplModel,
@@ -344,12 +344,11 @@ function jth_hprod(nlp :: AmplModel,
   if j < 0 | j > nlp.ncon
     error("expected 0 ≤ j ≤ $(nlp.ncon)")
   end
-  # Require that Julia be responsible for freeing up this chunk of memory.
-  Hv = pointer_to_array(@jampl_call(:jampl_hvcompd, Ptr{Float64},
-                                     (Ptr{Void}, Ptr{Float64}, Int),
-                                      nlp.__asl, v,            j-1),
-                         (nlp.nvar,), true)
-  return (j > 0) ? -Hv : Hv  # lagscale() flipped the sign of each constraint.
+  hv = Array(Float64, nlp.nvar);
+  @jampl_call(:jampl_hvcompd, Ptr{Float64},
+                             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
+                              nlp.__asl, v,            hv,           j-1);
+  return (j > 0) ? -hv : hv  # lagscale() flipped the sign of each constraint.
 end
 
 function ghjvprod(nlp :: AmplModel,
@@ -366,11 +365,10 @@ function ghjvprod(nlp :: AmplModel,
   if length(v) < nlp.nvar
     error("v must have length at least $(nlp.nvar)")
   end
-  # Require that Julia be responsible for freeing up this chunk of memory.
-  gHv = pointer_to_array(@jampl_call(:jampl_ghjvprod, Ptr{Float64},
-                                     (Ptr{Void}, Ptr{Float64}, Ptr{Float64}),
-                                      nlp.__asl, g,            v),
-                         (nlp.ncon,), true)
+  gHv = Array(Float64, nlp.ncon);
+  @jampl_call(:jampl_ghjvprod, Ptr{Float64},
+                              (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
+                               nlp.__asl, g,            v,            gHv);
   return -gHv  # lagscale() flipped the sign of each constraint.
 end
 
