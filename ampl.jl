@@ -291,7 +291,7 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   @jampl_call(:jampl_sparse_congrad, Void,
                            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}),
                             nlp.__asl, x,            j-1,   inds,       vals)
-  sparsevec(inds, vals, nlp.nvar)
+  return sparsevec(inds, vals, nlp.nvar)
 end
 
 function jac(nlp :: AmplModel, x :: Array{Float64,1})
@@ -304,7 +304,7 @@ function jac(nlp :: AmplModel, x :: Array{Float64,1})
   cols = Array(Int64, nlp.nnzj)
   vals = Array(Float64, nlp.nnzj)
   @jampl_call(:jampl_jac, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}), nlp.__asl, x, rows, cols, vals)
-  sparse(rows, cols, vals, nlp.ncon, nlp.nvar)
+  return sparse(rows, cols, vals, nlp.ncon, nlp.nvar)
 end
 
 function hprod(nlp :: AmplModel,
@@ -390,5 +390,5 @@ function hess(nlp :: AmplModel,
   @jampl_call(:jampl_hess, Void,
                                  (Ptr{Void}, Ptr{Float64}, Float64, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
                                   nlp.__asl, y, obj_weight, rows, cols, vals)
-  sparse(rows, cols, vals, nlp.nvar, nlp.nvar)
+  return sparse(rows, cols, vals, nlp.nvar, nlp.nvar)
 end
