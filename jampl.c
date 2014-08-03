@@ -172,7 +172,6 @@ size_t jampl_sparse_congrad_nnz(void *asl, int j) {
   return nzgj;
 }
 
-
 void jampl_sparse_congrad(void *asl, double *x, int j, int64_t *inds, double *vals) {
   ASL *this_asl = (ASL *)asl;
   cgrad *cg;
@@ -206,30 +205,6 @@ void jampl_jac(void *asl, double *x, int64_t *rows, int64_t *cols, double *vals)
         rows[cg->goff] = (long)j + 1;
         cols[cg->goff] = (long)(cg->varno) + 1;
     }
-
-#ifdef DEBUG_AMPL_JL
-  printf("AMPL says nzc = %d\n", this_nzc);
-  printf("array lengths are %d\n", jl_array_len(jrows));
-  printf("Error code = %d\n", ne);
-  size_t l;
-  int nelts = this_nzc/2 < 4 ? this_nzc/2 : 4;
-  printf("J: vals = [ ");
-  for (l = 0; l < nelts; l++) printf("%8.1e ", vals[l]);
-  printf("... ");
-  for (l = 0; l < nelts; l++) printf("%8.1e ", vals[this_nzc - nelts + l]);
-  printf("]\n");
-  printf("J: rows = [ ");
-  for (l = 0; l < nelts; l++) printf("%d ", rows[l]);
-  printf("... ");
-  for (l = 0; l < nelts; l++) printf("%d ", rows[this_nzc - nelts + l]);
-  printf("]\n");
-  printf("J: cols = [ ");
-  for (l = 0; l < nelts; l++) printf("%d ", cols[l]);
-  printf("... ");
-  for (l = 0; l < nelts; l++) printf("%d ", cols[this_nzc - nelts + l]);
-  printf("]\n");
-#endif
-
 }
 
 // Hessian.
@@ -300,18 +275,4 @@ void jampl_hess(void *asl, double *y, double w, int64_t *rows, int64_t *cols, do
       cols[k] = i + 1;
       k++;
     }
-
-#ifdef DEBUG_AMPL_JL
-  size_t l;
-  printf("vals = [ ");
-  for (l = 0; l < jl_array_len(jvals); l++) printf("%8.1e ", vals[l]);
-  printf("]\n");
-  printf("rows = [ ");
-  for (l = 0; l < jl_array_len(jrows); l++) printf("%d ", rows[l]);
-  printf("]\n");
-  printf("cols = [ ");
-  for (l = 0; l < jl_array_len(jcols); l++) printf("%d ", cols[l]);
-  printf("]\n");
-#endif
-
 }
