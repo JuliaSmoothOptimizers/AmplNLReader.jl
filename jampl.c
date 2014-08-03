@@ -117,13 +117,10 @@ double jampl_obj(void *asl, double *x) {
   return (*((ASL *)asl)->p.Objval)((ASL *)asl, 0, x, &ne);
 }
 
-double *jampl_grad(void *asl, double *x) {
+void jampl_grad(void *asl, double *x, double *g) {
   fint ne;
-  int this_nvar = ((ASL *)asl)->i.n_var_;
-  double *g = (double *)Malloc(this_nvar * sizeof(real));
 
   (*((ASL *)asl)->p.Objgrd)((ASL *)asl, 0, x, g, &ne);
-  return g;
 }
 
 // Lagrangian.
@@ -145,13 +142,10 @@ void jampl_conscale(void *asl, double *s) {
   return;
 }
 
-double *jampl_cons(void *asl, double *x) {
+void jampl_cons(void *asl, double *x, double *c) {
   fint ne;
-  int this_ncon = ((ASL *)asl)->i.n_con_;
-  double *c = (double *)Malloc(this_ncon * sizeof(real));
 
   (*((ASL *)asl)->p.Conval)((ASL *)asl, x, c, &ne);
-  return c;
 }
 
 double jampl_jcon(void *asl, double *x, int j) {
@@ -159,34 +153,25 @@ double jampl_jcon(void *asl, double *x, int j) {
   return (*((ASL *)asl)->p.Conival)((ASL *)asl, j, x, &ne);
 }
 
-double *jampl_jcongrad(void *asl, double *x, int j) {
+void jampl_jcongrad(void *asl, double *x, double *g, int j) {
   ASL *this_asl = (ASL *)asl;
-  int this_nvar = this_asl->i.n_var_;
-  double *g = (double *)Malloc(this_nvar * sizeof(real));
-
   fint ne;
   (*(this_asl->p.Congrd))(this_asl, j, x, g, &ne);
-  return g;
 }
 
-jl_tuple_t *jampl_sparse_congrad(void *asl, double *x, int j) {
+size_t jampl_sparse_congrad_nnz(void *asl, int j) {
   ASL *this_asl = (ASL *)asl;
   size_t nzgj = 0;
   cgrad *cg;
   for (cg = this_asl->i.Cgrad_[j]; cg; cg = cg->next) nzgj++;
 
-  // Declare double and long Julia array types.
-  jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
-  jl_value_t *int64_array_type   = jl_apply_array_type(jl_int64_type,   1);
+  return nzgj;
+}
 
-  jl_array_t *jvals = NULL, *jinds = NULL;
-  JL_GC_PUSH2(&jvals, &jinds);  // Let Julia worry about these chunks.
+void jampl_sparse_congrad(void *asl, double *x, int j, int64_t *inds, double *vals) {
+  ASL *this_asl = (ASL *)asl;
+  cgrad *cg;
 
-  jvals = jl_alloc_array_1d(float64_array_type, nzgj);
-  jinds = jl_alloc_array_1d(int64_array_type,   nzgj);
-
-  long   *inds = (long   *)jl_array_data(jinds);
-  double *vals = (double *)jl_array_data(jvals);
 
   int congrd_mode_bkup = this_asl->i.congrd_mode;
   this_asl->i.congrd_mode = 1;  // Sparse gradient mode.
@@ -200,33 +185,12 @@ jl_tuple_t *jampl_sparse_congrad(void *asl, double *x, int j) {
 
   this_asl->i.congrd_mode = congrd_mode_bkup;  // Restore gradient mode.
 
-  jl_tuple_t *tuple = jl_alloc_tuple(2);
-  jl_tupleset(tuple, 0, jinds);
-  jl_tupleset(tuple, 1, jvals);
-
-  JL_GC_POP();
-  return tuple;
 }
 
-// Return Jacobian at x in triplet form (rows, vals, cols).
-jl_tuple_t *jampl_jac(void *asl, double *x) {
+// Evaluate Jacobian at x in triplet form (rows, vals, cols).
+void jampl_jac(void *asl, double *x, int64_t *rows, int64_t *cols, double *vals) {
   ASL *this_asl = (ASL *)asl;
   int this_nzc = this_asl->i.nzc_, this_ncon = this_asl->i.n_con_;
-
-  // Declare double and long Julia array types.
-  jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
-  jl_value_t *int64_array_type   = jl_apply_array_type(jl_int64_type,   1);
-
-  jl_array_t *jvals = NULL, *jrows = NULL, *jcols = NULL;
-  JL_GC_PUSH3(&jvals, &jrows, &jcols);  // Let Julia worry about these chunks.
-
-  jvals = jl_alloc_array_1d(float64_array_type, (size_t)(this_nzc));
-  jrows = jl_alloc_array_1d(int64_array_type,   (size_t)(this_nzc));
-  jcols = jl_alloc_array_1d(int64_array_type,   (size_t)(this_nzc));
-
-  long   *rows = (long   *)jl_array_data(jrows);
-  long   *cols = (long   *)jl_array_data(jcols);
-  double *vals = (double *)jl_array_data(jvals);
 
   fint ne;
   (*(this_asl->p.Jacval))(this_asl, x, vals, &ne);
@@ -237,68 +201,30 @@ jl_tuple_t *jampl_jac(void *asl, double *x) {
         rows[cg->goff] = (long)j + 1;
         cols[cg->goff] = (long)(cg->varno) + 1;
     }
-
-#ifdef DEBUG_AMPL_JL
-  printf("AMPL says nzc = %d\n", this_nzc);
-  printf("array lengths are %d\n", jl_array_len(jrows));
-  printf("Error code = %d\n", ne);
-  size_t l;
-  int nelts = this_nzc/2 < 4 ? this_nzc/2 : 4;
-  printf("J: vals = [ ");
-  for (l = 0; l < nelts; l++) printf("%8.1e ", vals[l]);
-  printf("... ");
-  for (l = 0; l < nelts; l++) printf("%8.1e ", vals[this_nzc - nelts + l]);
-  printf("]\n");
-  printf("J: rows = [ ");
-  for (l = 0; l < nelts; l++) printf("%d ", rows[l]);
-  printf("... ");
-  for (l = 0; l < nelts; l++) printf("%d ", rows[this_nzc - nelts + l]);
-  printf("]\n");
-  printf("J: cols = [ ");
-  for (l = 0; l < nelts; l++) printf("%d ", cols[l]);
-  printf("... ");
-  for (l = 0; l < nelts; l++) printf("%d ", cols[this_nzc - nelts + l]);
-  printf("]\n");
-#endif
-
-  jl_tuple_t *tuple = jl_alloc_tuple(3);
-  jl_tupleset(tuple, 0, jrows);
-  jl_tupleset(tuple, 1, jcols);
-  jl_tupleset(tuple, 2, jvals);
-
-  JL_GC_POP();
-  return tuple;
 }
 
 // Hessian.
 
-double *jampl_hprod(void *asl, double *y, double *v, double w) {
+void jampl_hprod(void *asl, double *y, double *v, double *hv, double w) {
   ASL *this_asl = (ASL *)asl;
-  int this_nvar = this_asl->i.n_var_;
-  double *hv = (double *)Malloc(this_nvar * sizeof(real));
   double ow[1];  // Objective weight.
 
   ow[0]  = this_asl->i.objtype_[0] ? -w : w;
   hvpinit_ASL(this_asl, this_asl->p.ihd_limit_, 0, NULL, y);
   (*(this_asl->p.Hvcomp))(this_asl, hv, v, -1, ow, y); // nobj=-1 so ow takes precendence.
-  return hv;
 }
 
-double *jampl_hvcompd(void *asl, double *v, int nobj) {
+void jampl_hvcompd(void *asl, double *v, double *hv, int nobj) {
   ASL *this_asl = (ASL *)asl;
-  int this_nvar = this_asl->i.n_var_;
-  double *hv = (double *)Malloc(this_nvar * sizeof(real));
   (*(this_asl->p.Hvcompd))(this_asl, hv, v, nobj);
-  return hv;
 }
 
-double *jampl_ghjvprod(void *asl, double *g, double *v) {
+void jampl_ghjvprod(void *asl, double *g, double *v, double *ghjv) {
   ASL *this_asl = (ASL *)asl;
   int this_ncon = this_asl->i.n_con_;
   int this_nvar = this_asl->i.n_var_;
   int this_nlc  = this_asl->i.nlc_;
   double *hv    = (double *)Malloc(this_nvar * sizeof(real));
-  double *ghjv  = (double *)Malloc(this_ncon * sizeof(real));
 
   fint ne;
   double prod;
@@ -317,30 +243,13 @@ double *jampl_ghjvprod(void *asl, double *g, double *v) {
 
   // All terms corresponding to linear constraints are zero.
   for (j = this_nlc ; j < this_ncon ; j++) ghjv[j] = 0.;
-
-  return ghjv;
 }
 
 // Return Hessian at (x,y) in triplet form (rows, vals, cols).
-jl_tuple_t *jampl_hess(void *asl, double *y, double w) {
+void jampl_hess(void *asl, double *y, double w, int64_t *rows, int64_t *cols, double *vals) {
   ASL *this_asl = (ASL *)asl;
   double ow[1];  // Objective weight.
   size_t nnzh = (size_t)((*(this_asl->p.Sphset))(this_asl, 0, -1, 1, 1, 1)); // nobj=-1 so ow takes precendence.
-
-  // Declare double and long Julia array types.
-  jl_value_t *float64_array_type = jl_apply_array_type(jl_float64_type, 1);
-  jl_value_t *int64_array_type   = jl_apply_array_type(jl_int64_type,   1);
-
-  jl_array_t *jvals = NULL, *jrows = NULL, *jcols = NULL;
-  JL_GC_PUSH3(&jvals, &jrows, &jcols);  // Let Julia worry about these chunks.
-
-  jvals = jl_alloc_array_1d(float64_array_type, nnzh);
-  jrows = jl_alloc_array_1d(int64_array_type,   nnzh);
-  jcols = jl_alloc_array_1d(int64_array_type,   nnzh);
-
-  long   *rows = (long   *)jl_array_data(jrows);
-  long   *cols = (long   *)jl_array_data(jcols);
-  double *vals = (double *)jl_array_data(jvals);
 
   ow[0]  = this_asl->i.objtype_[0] ? -w : w;
   (*(this_asl->p.Sphes))(this_asl, 0, vals, -1, ow, y);
@@ -353,25 +262,4 @@ jl_tuple_t *jampl_hess(void *asl, double *y, double w) {
       cols[k] = i + 1;
       k++;
     }
-
-#ifdef DEBUG_AMPL_JL
-  size_t l;
-  printf("vals = [ ");
-  for (l = 0; l < jl_array_len(jvals); l++) printf("%8.1e ", vals[l]);
-  printf("]\n");
-  printf("rows = [ ");
-  for (l = 0; l < jl_array_len(jrows); l++) printf("%d ", rows[l]);
-  printf("]\n");
-  printf("cols = [ ");
-  for (l = 0; l < jl_array_len(jcols); l++) printf("%d ", cols[l]);
-  printf("]\n");
-#endif
-
-  jl_tuple_t *tuple = jl_alloc_tuple(3);
-  jl_tupleset(tuple, 0, jrows);
-  jl_tupleset(tuple, 1, jcols);
-  jl_tupleset(tuple, 2, jvals);
-
-  JL_GC_POP();
-  return tuple;
 }
