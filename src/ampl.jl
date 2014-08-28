@@ -1,5 +1,11 @@
 # A rudimentary AMPL interface in Julia.
 # D. Orban, Vancouver, April 2014.
+module ampl
+
+export AmplModel,
+       write_sol, amplmodel_finalize, varscale, lagscale, conscale,
+       obj, grad, cons, jth_con, jth_congrad, jth_sparse_congrad,
+       jac_coord, jac, hprod, jth_hprod, ghjvprod, hess_coord, hess
 
 include("ampl_utils.jl")
 
@@ -406,3 +412,5 @@ function hess(nlp :: AmplModel,
   (rows, cols, vals) = hess_coord(nlp, x, y=y, obj_weight=obj_weight);
   return sparse(rows, cols, vals, nlp.nvar, nlp.nvar)
 end
+
+end  # Module ampl
