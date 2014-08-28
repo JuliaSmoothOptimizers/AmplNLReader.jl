@@ -112,10 +112,12 @@ Method                          | Notes
 `jth_con(nlp, x, j)`            | Evaluate the `j`-th constraint at `x`
 `jth_congrad(nlp, x, j)`        | Evaluate the `j`-th constraint gradient at `x`
 `jth_sparse_congrad(nlp, x, j)` | Evaluate the `j`-th constraint sparse gradient at `x`
+`jac_coord(nlp, x)`             | Evaluate the sparse Jacobian of the constraints at `x` in coordinate format
 `jac(nlp, x)`                   | Evaluate the sparse Jacobian of the constraints at `x`
 `hprod(nlp, x, v, y=y0, w=1)`   | Evaluate the product of the Hessian of the Lagrangian at (`x`,`y`) with `v` using the objective weight `w`
 `jth_hprod(nlp, x, v, j)`       | Compute the product of the Hessian of the `j`-th constraint at `x` with `v`
 `ghjvprod(nlp, x, g, v)`        | Compute the vector of dot products (`g`, `Hj*v`)
+`hess_coord(nlp, x, y=y0, w=1.)`| Evaluate the sparse Hessian of the Lagrangian at (`x`,`y`) using the objective weight `w` in coordinate format
 `hess(nlp, x, y=y0, w=1.)`      | Evaluate the sparse Hessian of the Lagrangian at (`x`,`y`) using the objective weight `w`
 `write_sol(nlp, msg, x, y)`     | Write primal and dual solutions to file
 

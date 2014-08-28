@@ -294,16 +294,22 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   return sparsevec(inds, vals, nlp.nvar)
 end
 
-function jac(nlp :: AmplModel, x :: Array{Float64,1})
-  # Evaluate the sparse Jacobian of the constraints at x.
+function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
+  # Evaluate the sparse Jacobian of the constraints at x in coordinate format.
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
   end
-  
+
   rows = Array(Int64, nlp.nnzj)
   cols = Array(Int64, nlp.nnzj)
   vals = Array(Float64, nlp.nnzj)
   @jampl_call(:jampl_jac, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}), nlp.__asl, x, rows, cols, vals)
+  return (rows, cols, vals)
+end
+
+function jac(nlp :: AmplModel, x :: Array{Float64,1})
+  # Evaluate the sparse Jacobian of the constraints.
+  (rows, cols, vals) = jac_coord(nlp, x);
   return sparse(rows, cols, vals, nlp.ncon, nlp.nvar)
 end
 
@@ -372,11 +378,11 @@ function ghjvprod(nlp :: AmplModel,
   return -gHv  # lagscale() flipped the sign of each constraint.
 end
 
-function hess(nlp :: AmplModel,
-              x :: Array{Float64,1};
-              y :: Array{Float64,1} = nlp.y0,
-              obj_weight :: Float64 = 1.0)
-  # Evaluate the sparse Hessian of the Lagrangian at (x,y).
+function hess_coord(nlp :: AmplModel,
+                    x :: Array{Float64,1};
+                    y :: Array{Float64,1} = nlp.y0,
+                    obj_weight :: Float64 = 1.0)
+  # Evaluate the sparse Hessian of the Lagrangian at (x,y) in coordinate format.
   # Note: x is in fact not used.
   if length(x) < nlp.nvar
     error("x must have length at least $(nlp.nvar)")
@@ -388,7 +394,15 @@ function hess(nlp :: AmplModel,
   cols = Array(Int64, nlp.nnzh)
   vals = Array(Float64, nlp.nnzh)
   @jampl_call(:jampl_hess, Void,
-                                 (Ptr{Void}, Ptr{Float64}, Float64, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
-                                  nlp.__asl, y, obj_weight, rows, cols, vals)
+                          (Ptr{Void}, Ptr{Float64}, Float64, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
+                           nlp.__asl, y, obj_weight, rows, cols, vals)
+  return (rows, cols, vals)
+end
+
+function hess(nlp :: AmplModel,
+              x :: Array{Float64,1};
+              y :: Array{Float64,1} = nlp.y0,
+              obj_weight :: Float64 = 1.0)
+  (rows, cols, vals) = hess_coord(nlp, x, y=y, obj_weight=obj_weight);
   return sparse(rows, cols, vals, nlp.nvar, nlp.nvar)
 end
