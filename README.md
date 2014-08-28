@@ -1,5 +1,7 @@
 # ampl.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
+## How to Install
+
 This is a rudimentary Julia interface to the AMPL Solver Library (ASL). Installing on OSX should be easy using [Homebrew](http://brew.sh):
 
 Make sure you have the ASL:
@@ -7,17 +9,34 @@ Make sure you have the ASL:
     brew tap homebrew/science
     brew install asl
 
-Clone this repository somewhere, and say `make`. That should do it.
+At the Julia prompt, clone this repository and build:
 
-You can test the installation with `julia test.jl`.
+````JULIA
+julia> Pkg.clone("https://github.com/dpo/ampl.jl.git")
+julia> Pkg.build("ampl")
+````
+
+In order for Julia to find the AMPL interface library, its location must
+appear on your `LD_LIBRARY_PATH`:
+````
+export LD_LIBRARY_PATH=~/.julia/v0.x/ampl/src:$LD_LIBRARY_PATH
+````
+
+Place the above in your `~/.bashrc` to make it permanent.
+
+## Testing
+
+````JULIA
+julia> Pkg.test("ampl")
+````
+
+## Creating a Model
 
 For an introduction to the AMPL modeling language, see
 
 * R. Fourer, D. M. Gay, and B. W. Kernighan, [AMPL: A Mathematical Programming Language](http://ampl.com/REFS/amplmod.pdf), Management Science 36, pp. 519-554, 1990.
 * R. Fourer, D. M. Gay, and B. W. Kernighan, [AMPL: A Modeling Language for Mathematical Programming](http://ampl.com/BOOK/download.html), Duxbury Press / Brooks/Cole Publishing Company, 2003.
 * D. Orban, [The Lightning AMPL Tutorial. A Guide for Nonlinear Optimization Users](http://www.gerad.ca/fichiers/cahiers/G-2009-66.pdf), [GERAD](http://www.gerad.ca) Technical Report G-2009-66, 2009.
-
-## Creating a Model
 
 Suppose you have an AMPL model represented by the model and data files `mymodel.mod` and `mymodel.dat`. Decode this model as a so-called `nl` file using
 
@@ -26,7 +45,7 @@ Suppose you have an AMPL model represented by the model and data files `mymodel.
 For example:
 
 ````Julia
-julia> include("ampl.jl")
+julia> using ampl
 
 julia> hs33 = AmplModel("hs033.nl")
 Minimization problem hs033.nl
