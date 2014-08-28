@@ -1,5 +1,6 @@
 # Test ampl.jl.
-include("ampl.jl")
+# include("ampl.jl")
+using ampl
 
 function exercise_ampl_model(nlp :: AmplModel)
   print(nlp)
