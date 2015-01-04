@@ -2,7 +2,7 @@
 
 ## How to Install
 
-This is a rudimentary Julia interface to the AMPL Solver Library (ASL). Installing on OSX should be easy using [Homebrew](http://brew.sh):
+This is a rudimentary Julia interface to the AMPL Solver Library (ASL). Installing on OSX and Linux should be easy using [Homebrew](http://brew.sh) and [LinuxBrew](http://brew.sh/linuxbrew):
 
 Make sure you have the ASL:
 
@@ -19,7 +19,7 @@ julia> Pkg.build("ampl")
 In order for Julia to find the AMPL interface library, its location must
 appear on your `LD_LIBRARY_PATH`:
 ````
-export LD_LIBRARY_PATH=~/.julia/v0.x/ampl/src:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$(julia -E 'Pkg.dir()' | sed -e 's/"//g')/ampl/src:$LD_LIBRARY_PATH
 ````
 
 Place the above in your `~/.bashrc` to make it permanent.
@@ -144,10 +144,6 @@ Method                          | Notes
 
 * methods for LPs (sparse cost, sparse contraint matrix)
 * methods to check optimality conditions.
-
-## Todo
-
-* Support problems with multiple objectives.
 
 This content is released under the [MIT](http://opensource.org/licenses/MIT) License.
 <a rel="license" href="http://opensource.org/licenses/MIT">
