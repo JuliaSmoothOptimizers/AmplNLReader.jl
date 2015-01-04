@@ -145,10 +145,6 @@ Method                          | Notes
 * methods for LPs (sparse cost, sparse contraint matrix)
 * methods to check optimality conditions.
 
-## Todo
-
-* Support problems with multiple objectives.
-
 This content is released under the [MIT](http://opensource.org/licenses/MIT) License.
 <a rel="license" href="http://opensource.org/licenses/MIT">
 <img alt="MIT license" height="40" src="http://upload.wikimedia.org/wikipedia/commons/c/c3/License_icon-mit.svg" /></a>
