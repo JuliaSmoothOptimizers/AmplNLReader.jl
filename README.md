@@ -1,5 +1,9 @@
 # ampl.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
+OSX: [![Build
+Status](https://travis-ci.org/dpo/ampl.jl.svg?branch=master)](https://travis-ci.org/dpo/ampl.jl)
+Linux: Coming up
+
 ## How to Install
 
 This is a rudimentary Julia interface to the AMPL Solver Library (ASL). Installing on OSX and Linux should be easy using [Homebrew](http://brew.sh) and [LinuxBrew](http://brew.sh/linuxbrew):
