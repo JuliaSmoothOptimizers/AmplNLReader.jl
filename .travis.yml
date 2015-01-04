@@ -11,9 +11,9 @@ install:
   - brew install asl
   - export JULIA_PKG_DIR=$(julia -E 'Pkg.dir()' | sed -e 's/"//g')
   - export LD_LIBRARY_PATH=$JULIA_PKG_DIR/ampl/src:$LD_LIBRARY_PATH
-  - julia -E 'Pkg.clone(pwd())';
+  - julia -E 'Pkg.clone(pwd());'
   - julia -E 'Pkg.build("ampl");'
 
 script:
-  - julia --check-bounds=yes -E 'Pkg.test("ampl")'
+  - julia --check-bounds=yes -E 'Pkg.test("ampl");'
 
