@@ -1,3 +1,4 @@
+#include <sys/types.h>                 // For ssize_t
 #include "asl/asl_pfgh.h"              // Ampl library headers
 #include "asl/jacpdim.h"               // For partially-separable structure
 

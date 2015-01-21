@@ -1,8 +1,7 @@
 # ampl.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
-OSX: [![Build
+OSX and Linux: [![Build
 Status](https://travis-ci.org/dpo/ampl.jl.svg?branch=master)](https://travis-ci.org/dpo/ampl.jl)
-Linux: Coming up
 
 ## How to Install
 
