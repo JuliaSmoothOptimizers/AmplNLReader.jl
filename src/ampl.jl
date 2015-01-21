@@ -10,7 +10,7 @@ export AmplModel,
 include("ampl_utils.jl")
 
 # Convenience macros and libasl specifics.
-jampl = "jampl";
+jampl = "libjampl";
 macro jampl_call(func, args...)
   quote
     ccall(($func, $jampl), $(args...))
