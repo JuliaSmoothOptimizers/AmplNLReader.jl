@@ -1,19 +1,31 @@
-language: objective-c
+language: julia
+
+os:
+  - osx
+  - linux
+
+julia:
+  - release
 
 before_install:
+  # Install Linuxbrew.
+  - unset DYLD_LIBRARY_PATH
+  - if [ `uname` = "Linux" ]; then bash setup_travis_linux.sh; fi
+  - if [ `uname` = "Linux" ]; then export PATH="$HOME/.linuxbrew/bin:$PATH"; fi
+  - if [ `uname` = "Linux" ]; then export LD_LIBRARY_PATH="$HOME/.linuxbrew/lib:$LD_LIBRARY_PATH"; fi
   - brew --config
   - brew update
-  - brew tap staticfloat/julia
-  - brew install julia
+  - if [ `uname` = "Linux" ]; then brew install pkg-config; fi
 
 install:
+  # Install ASL.
   - brew tap homebrew/science
   - brew install asl
   - export JULIA_PKG_DIR=$(julia -E 'Pkg.dir()' | sed -e 's/"//g')
   - export LD_LIBRARY_PATH=$JULIA_PKG_DIR/ampl/src:$LD_LIBRARY_PATH
-  - julia -E 'Pkg.clone(pwd());'
+  - julia -E 'Pkg.clone(pwd())';
   - julia -E 'Pkg.build("ampl");'
 
 script:
-  - julia --check-bounds=yes -E 'Pkg.test("ampl");'
+  - julia --check-bounds=yes -E 'Pkg.test("ampl")'
 
