@@ -5,31 +5,31 @@ using ampl
 function exercise_ampl_model(nlp :: AmplModel)
   print(nlp)
 
-  f = obj( nlp, nlp.x0)
-  g = grad(nlp, nlp.x0)
-  c = cons(nlp, nlp.x0)
-  J = jac( nlp, nlp.x0)
-  H = hess(nlp, nlp.x0, y=ones(nlp.ncon,))
+  f = obj( nlp, nlp.meta.x0)
+  g = grad(nlp, nlp.meta.x0)
+  c = cons(nlp, nlp.meta.x0)
+  J = jac( nlp, nlp.meta.x0)
+  H = hess(nlp, nlp.meta.x0, y=ones(nlp.meta.ncon,))
 
   @printf("f(x0) = %f\n", f)
   @printf("∇f(x0) = "); display(g'); @printf("\n")
   @printf("c(x0) = ");  display(c'); @printf("\n")
-  for j = 1 : nlp.ncon
+  for j = 1 : nlp.meta.ncon
     @printf("∇c_%d(x0) =", j)
-    display(jth_congrad(nlp, nlp.x0, j)); @printf("\n")
+    display(jth_congrad(nlp, nlp.meta.x0, j)); @printf("\n")
     @printf("sparse ∇c_%d(x0) =", j)
-    display(jth_sparse_congrad(nlp, nlp.x0, j)); @printf("\n")
+    display(jth_sparse_congrad(nlp, nlp.meta.x0, j)); @printf("\n")
   end
   @printf "J(x0) = \n";      display(J); @printf("\n")
   @printf "∇²L(x0,y0) = \n"; display(H); @printf("\n")
 
-  e = ones(nlp.nvar)
-  for j = 1 : nlp.ncon
-    Hje = jth_hprod(nlp, nlp.x0, e, j)
+  e = ones(nlp.meta.nvar)
+  for j = 1 : nlp.meta.ncon
+    Hje = jth_hprod(nlp, nlp.meta.x0, e, j)
     @printf("∇²c_%d(x0) * e = ", j); display(Hje'); @printf("\n")
   end
 
-  ghje = ghjvprod(nlp, nlp.x0, g, e)
+  ghje = ghjvprod(nlp, nlp.meta.x0, g, e)
   @printf "(∇f(x0), ∇²c_j(x0) * e) = "; display(ghje'); @printf("\n")
 end
 
