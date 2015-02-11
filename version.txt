@@ -1,2 +1,2 @@
-ampl.jl version 0.5
-January 2015.
+ampl.jl version 0.6
+February 2015.
