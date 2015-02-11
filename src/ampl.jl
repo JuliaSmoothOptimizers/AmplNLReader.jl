@@ -11,7 +11,7 @@ export AmplModel,
 
 include("ampl_utils.jl")
 
-# Convenience macros and libasl specifics.
+# Convenience macro.
 jampl = "libjampl";
 macro jampl_call(func, args...)
   quote
@@ -25,10 +25,7 @@ type AmplModel
 
   function AmplModel(stub :: ASCIIString)
     asl = @jampl_call(:jampl_init, Ptr{Void}, (Ptr{Uint8},), stub);
-    if asl == C_NULL
-      msg = "Error allocating ASL structure"
-      error(msg)
-    end
+    asl == C_NULL && error("Error allocating ASL structure")
 
     minimize = !bool(@jampl_call(:jampl_objtype, Int32, (Ptr{Void},), asl));
     islp = bool(@jampl_call(:jampl_islp, Int32, (Ptr{Void},), asl));
@@ -82,12 +79,9 @@ end
 # Methods associated to AmplModel instances.
 
 function write_sol(nlp :: AmplModel, msg :: ASCIIString, x :: Array{Float64,1}, y :: Array{Float64,1})
-  if length(x) != nlp.meta.nvar
-    error("x must have length $(nlp.meta.nvar)")
-  end
-  if length(y) != nlp.meta.ncon
-    error("y must have length $(nlp.meta.ncon)")
-  end
+  length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
+  length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
+
   @jampl_call(:jampl_write_sol, Void,
                                 (Ptr{Void}, Ptr{Uint8}, Ptr{Float64}, Ptr{Float64}),
                                 nlp.__asl,  msg,        x,            y)
@@ -112,9 +106,8 @@ end
 
 function varscale(nlp :: AmplModel, s :: Array{Float64,1})
   # Scale the vector of variables by the vector s.
-  if length(s) < nlp.meta.nvar
-    error("s must have length at least $(nlp.meta.nvar)")
-  end
+  length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
+
   @jampl_call(:jampl_varscale, Void,
               (Ptr{Void}, Ptr{Float64}),
                nlp.__asl, s)
@@ -128,9 +121,8 @@ end
 
 function conscale(nlp :: AmplModel, s :: Array{Float64,1})
   # Scale the vector of constraints by the vector s.
-  if length(s) < nlp.meta.ncon
-    error("s must have length at least $(nlp.meta.ncon)")
-  end
+  length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
+
   @jampl_call(:jampl_conscale, Void,
               (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
 end
@@ -139,17 +131,15 @@ end
 
 function obj(nlp :: AmplModel, x :: Array{Float64,1})
   # Evaluate the objective function at x.
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
   @jampl_call(:jampl_obj, Float64, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x)
 end
 
 function grad(nlp :: AmplModel, x :: Array{Float64,1})
   # Evaluate the objective function gradient at x.
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
   g = Array(Float64, nlp.meta.nvar)
   @jampl_call(:jampl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, g)
   return g
@@ -157,9 +147,8 @@ end
 
 function cons(nlp :: AmplModel, x :: Array{Float64,1})
   # Evaluate the vector of constraints at x.
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
   c = Array(Float64, nlp.meta.ncon)
   @jampl_call(:jampl_cons, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, c)
   return c
@@ -167,25 +156,17 @@ end
 
 function jth_con(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   # Evaluate the j-th constraint at x.
-  if (j < 1) || (j > nlp.meta.ncon)
-    msg = "Invalid constraint index $j"
-    error(msg)
-  end
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
+  (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
   @jampl_call(:jampl_jcon, Float64, (Ptr{Void}, Ptr{Float64}, Int32), nlp.__asl, x, j-1)
 end
 
 function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   # Evaluate the j-th constraint gradient at x.
-  if (j < 1) || (j > nlp.meta.ncon)
-    msg = "Invalid constraint index $j"
-    error(msg)
-  end
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
+  (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
   g = Array(Float64, nlp.meta.nvar)
   @jampl_call(:jampl_jcongrad, Ptr{Float64},
                               (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32),
@@ -195,13 +176,9 @@ end
 
 function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   # Evaluate the j-th constraint sparse gradient at x.
-  if (j < 1) || (j > nlp.meta.ncon)
-    msg = "Invalid constraint index $j"
-    error(msg)
-  end
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
+  (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
   nnz = @jampl_call(:jampl_sparse_congrad_nnz, Csize_t,
                      (Ptr{Void}, Cint), nlp.__asl, j-1)
   inds = Array(Int64, nnz)
@@ -214,9 +191,7 @@ end
 
 function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
   # Evaluate the sparse Jacobian of the constraints at x in coordinate format.
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   rows = Array(Int64, nlp.meta.nnzj)
   cols = Array(Int64, nlp.meta.nnzj)
@@ -238,15 +213,10 @@ function hprod(nlp :: AmplModel,
                obj_weight :: Float64 = 1.0)
   # Evaluate the product of the Hessian of the Lagrangian at (x,y) with v.
   # Note: x is in fact not used.
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
-  if length(y) < nlp.meta.ncon
-    error("y must have length at least $(nlp.meta.ncon)")
-  end
-  if length(v) < nlp.meta.nvar
-    error("v must have length at least $(nlp.meta.nvar)")
-  end
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(y) >= nlp.meta.ncon || error("y must have length at least $(nlp.meta.ncon)")
+  length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
+
   hv = Array(Float64, nlp.meta.nvar);
   @jampl_call(:jampl_hprod, Ptr{Float64},
                            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
@@ -259,15 +229,10 @@ function jth_hprod(nlp :: AmplModel,
   # Compute the product of the Hessian of the j-th constraint at x with v.
   # If j=0, compute the product of the Hessian of the objective at x with v.
   # Note: x is in fact not used.
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
-  if length(v) < nlp.meta.nvar
-    error("v must have length at least $(nlp.meta.nvar)")
-  end
-  if j < 0 | j > nlp.meta.ncon
-    error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
-  end
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
+  (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
+
   hv = Array(Float64, nlp.meta.nvar);
   @jampl_call(:jampl_hvcompd, Ptr{Float64},
                              (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
@@ -280,15 +245,10 @@ function ghjvprod(nlp :: AmplModel,
   # Compute the vector of dot products (g, Hj*v)
   # where Hj is the Hessian of the j-th constraint at x.
   # Note: x is in fact not used.
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
-  if length(g) < nlp.meta.nvar
-    error("g must have length at least $(nlp.meta.nvar)")
-  end
-  if length(v) < nlp.meta.nvar
-    error("v must have length at least $(nlp.meta.nvar)")
-  end
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(g) >= nlp.meta.nvar || error("g must have length at least $(nlp.meta.nvar)")
+  length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
+
   gHv = Array(Float64, nlp.meta.ncon);
   @jampl_call(:jampl_ghjvprod, Ptr{Float64},
                               (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
@@ -302,12 +262,9 @@ function hess_coord(nlp :: AmplModel,
                     obj_weight :: Float64 = 1.0)
   # Evaluate the sparse Hessian of the Lagrangian at (x,y) in coordinate format.
   # Note: x is in fact not used.
-  if length(x) < nlp.meta.nvar
-    error("x must have length at least $(nlp.meta.nvar)")
-  end
-  if length(y) < nlp.meta.ncon
-    error("y must have length at least $(nlp.meta.ncon)")
-  end
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(y) >= nlp.meta.ncon || error("y must have length at least $(nlp.meta.ncon)")
+
   rows = Array(Int64, nlp.meta.nnzh)
   cols = Array(Int64, nlp.meta.nnzh)
   vals = Array(Float64, nlp.meta.nnzh)
