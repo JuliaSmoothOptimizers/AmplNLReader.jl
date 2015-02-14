@@ -1,7 +1,7 @@
 # ampl.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
 OSX and Linux: [![Build Status](https://travis-ci.org/dpo/ampl.jl.svg?branch=master)](https://travis-ci.org/dpo/ampl.jl)
-[![Coverage Status](https://coveralls.io/repos/dpo/ampl.jl/badge.svg)](https://coveralls.io/r/dpo/ampl.jl)
+[![Coverage Status](https://coveralls.io/repos/dpo/ampl.jl/badge.svg?branch=master)](https://coveralls.io/r/dpo/ampl.jl?branch=master)
 
 ## How to Install
 
