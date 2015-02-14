@@ -209,7 +209,7 @@ end
 function hprod(nlp :: AmplModel,
                x :: Array{Float64,1},
                v :: Array{Float64,1};
-               y :: Array{Float64,1} = nlp.y0,
+               y :: Array{Float64,1} = nlp.meta.y0,
                obj_weight :: Float64 = 1.0)
   # Evaluate the product of the Hessian of the Lagrangian at (x,y) with v.
   # Note: x is in fact not used.
