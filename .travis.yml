@@ -28,5 +28,8 @@ install:
   - julia -E 'Pkg.build("ampl");'
 
 script:
-  - julia --check-bounds=yes -E 'Pkg.test("ampl")'
+  - julia --check-bounds=yes -e 'Pkg.test("ampl"; coverage=true)'
+
+after_success:
+  - julia -e 'cd(Pkg.dir("ampl")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
 
