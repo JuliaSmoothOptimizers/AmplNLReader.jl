@@ -1,10 +1,9 @@
-# Test ampl.jl.
-# include("ampl.jl")
+using Base.Test
 using ampl
 
 function exercise_ampl_model(nlp :: AmplModel)
-  show(nlp)
-  print(nlp)
+  show(STDOUT, nlp)
+  print(STDOUT, nlp)
 
   # Perform dummy scaling.
   varscale(nlp, ones(nlp.meta.nvar))
@@ -48,3 +47,8 @@ exercise_ampl_model(rosenbrock)
 hs9 = AmplModel("hs009.nl")
 exercise_ampl_model(hs33)
 exercise_ampl_model(hs9)
+amplmodel_finalize(hs33)
+amplmodel_finalize(rosenbrock)
+amplmodel_finalize(hs9)
+@test_throws AmplException obj(hs9, hs9.meta.x0)
+
