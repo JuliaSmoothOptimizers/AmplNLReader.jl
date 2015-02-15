@@ -88,7 +88,11 @@ function write_sol(nlp :: AmplModel, msg :: ASCIIString, x :: Array{Float64,1}, 
 end
 
 function amplmodel_finalize(nlp :: AmplModel)
+  if nlp.__asl == C_NULL
+    return
+  end
   @jampl_call(:jampl_finalize, Void, (Ptr{Void},), nlp.__asl)
+  nlp.__asl = C_NULL
 end
 
 # Displaying AmplModel instances.
