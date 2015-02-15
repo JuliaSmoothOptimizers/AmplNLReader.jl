@@ -9,8 +9,6 @@ export AmplModel, AmplException,
        obj, grad, cons, jth_con, jth_congrad, jth_sparse_congrad,
        jac_coord, jac, hprod, jth_hprod, ghjvprod, hess_coord, hess
 
-include("ampl_utils.jl")
-
 # Convenience macro.
 jampl = "libjampl";
 macro jampl_call(func, args...)
