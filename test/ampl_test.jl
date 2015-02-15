@@ -3,8 +3,8 @@
 using ampl
 
 function exercise_ampl_model(nlp :: AmplModel)
-  show(nlp)
-  print(nlp)
+  show(STDOUT, nlp)
+  print(STDOUT, nlp)
 
   # Perform dummy scaling.
   varscale(nlp, ones(nlp.meta.nvar))
