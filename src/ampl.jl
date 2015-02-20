@@ -10,7 +10,7 @@ export AmplModel, AmplException,
        jac_coord, jac, hprod, jth_hprod, ghjvprod, hess_coord, hess
 
 # Convenience macro.
-jampl = "libjampl";
+jampl = "libasl";
 macro jampl_call(func, args...)
   quote
     ccall(($func, $jampl), $(args...))
@@ -208,7 +208,8 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   @jampl_call(:jampl_sparse_congrad, Void,
                            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}),
                             nlp.__asl, x,            j-1,   inds,       vals)
-  return sparsevec(inds, vals, nlp.meta.nvar)
+  # Use 1-based indexing.
+  return sparsevec(inds+1, vals, nlp.meta.nvar)
 end
 
 function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
@@ -220,7 +221,8 @@ function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
   cols = Array(Int64, nlp.meta.nnzj)
   vals = Array(Float64, nlp.meta.nnzj)
   @jampl_call(:jampl_jac, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}), nlp.__asl, x, rows, cols, vals)
-  return (rows, cols, vals)
+  # Use 1-based indexing.
+  return (rows+1, cols+1, vals)
 end
 
 function jac(nlp :: AmplModel, x :: Array{Float64,1})
@@ -299,7 +301,8 @@ function hess_coord(nlp :: AmplModel,
   @jampl_call(:jampl_hess, Void,
                           (Ptr{Void}, Ptr{Float64}, Float64, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
                            nlp.__asl, y, obj_weight, rows, cols, vals)
-  return (rows, cols, vals)
+  # Use 1-based indexing.
+  return (rows+1, cols+1, vals)
 end
 
 function hess(nlp :: AmplModel,
