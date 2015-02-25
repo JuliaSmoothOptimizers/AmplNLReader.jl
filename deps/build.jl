@@ -7,8 +7,6 @@ libmp = library_dependency("libmp", aliases=["libmp.1", "libmp.1.3.0"])
 
 # Uncomment when the ASL makes it into Homebrew.jl.
 # @osx_only begin
-#     if Pkg.installed("Homebrew") === nothing
-#         error("Homebrew package not installed, please run Pkg.add(\"Homebrew\")")  end
 #     using Homebrew
 #     provides(Homebrew.HB, "asl", [libasl, libmp], os = :Darwin)
 # end
