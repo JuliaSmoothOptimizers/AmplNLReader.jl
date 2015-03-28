@@ -10,11 +10,11 @@ julia:
 before_install:
   - unset DYLD_LIBRARY_PATH
   - if [ `uname` == "Linux" ]; then sudo apt-get install -y cmake; fi
-  - if [ `uname` == "Darwin" ]; then brew --config; brew update; fi
+  #- if [ `uname` == "Darwin" ]; then brew --config; brew update; fi
 
 install:
   # Install ASL.
-  - if [ `uname` == "Darwin" ]; then brew tap homebrew/science; brew install asl; fi
+  #- if [ `uname` == "Darwin" ]; then brew tap homebrew/science; brew install asl; fi
   - julia -e 'versioninfo()'
   - julia -E 'Pkg.clone("https://github.com/optimizers/NLP.jl.git")'
   - julia -E 'Pkg.clone(pwd())';
