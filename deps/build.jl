@@ -2,13 +2,13 @@ using BinDeps
 
 @BinDeps.setup
 
-libasl = library_dependency("libasl", aliases=["libasl.1", "libasl.1.3.0"])
-libmp = library_dependency("libmp", aliases=["libmp.1", "libmp.1.3.0"])
+libasl = library_dependency("libasl", aliases=["libasl.1", "libasl.1.4.0"])
+libmp = library_dependency("libmp", aliases=["libmp.1", "libmp.1.4.0"])
 
 # Uncomment when the ASL makes it into Homebrew.jl.
 # @osx_only begin
-#     using Homebrew
-#     provides(Homebrew.HB, "asl", [libasl, libmp], os = :Darwin)
+#   using Homebrew
+#   provides(Homebrew.HB, "asl", [libasl, libmp], os = :Darwin)
 # end
 
 # Uncomment when there is a deb for the ASL.
@@ -21,14 +21,14 @@ libmp = library_dependency("libmp", aliases=["libmp.1", "libmp.1.3.0"])
 # end
 
 provides(Sources,
-         URI("https://github.com/ampl/mp/archive/1.3.0.tar.gz"),
+         URI("https://github.com/ampl/mp/archive/2.0.0.tar.gz"),
          [libasl, libmp],
-         SHA="aacac2c8f697e40d355457555774b6c1f71f36575a32a40fabef80f466d991b6",
-         unpacked_dir="mp-1.3.0")
+         SHA="b8bc51dfbf3db1628e0eb029a3f1305b0640018f67ff6cc397bd06a1e63a1e09",
+         unpacked_dir="mp-2.0.0")
 
 depsdir = BinDeps.depsdir(libasl)
 prefix = joinpath(depsdir, "usr")
-srcdir = joinpath(depsdir, "src", "mp-1.3.0")
+srcdir = joinpath(depsdir, "src", "mp-2.0.0")
 
 provides(SimpleBuild,
          (@build_steps begin
@@ -36,9 +36,6 @@ provides(SimpleBuild,
             (@build_steps begin
                ChangeDirectory(srcdir)
                (@build_steps begin
-                  # Until the next release, we need to patch os-test.cc
-                  `wget https://github.com/ampl/mp/commit/a9049249d579b6270826287c7162ed47443a1716.diff`
-                  `cat a9049249d579b6270826287c7162ed47443a1716.diff` |> `patch -p1`
                   `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DBUILD_SHARED_LIBS=True`
                   `make all`
                   `make test`
@@ -47,4 +44,4 @@ provides(SimpleBuild,
              end)
           end), [libasl, libmp], os = :Unix)
 
-@BinDeps.install [:libasl => :libasl]
+@BinDeps.install
