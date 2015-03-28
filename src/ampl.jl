@@ -9,8 +9,11 @@ export AmplModel, AmplException,
        obj, grad, cons, jth_con, jth_congrad, jth_sparse_congrad,
        jac_coord, jac, hprod, jth_hprod, ghjvprod, hess_coord, hess
 
-using BinDeps
-@BinDeps.load_dependencies
+if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
+  include("../deps/deps.jl")
+else
+  error("ASL library not properly installed. Please run Pkg.build(\"ampl\")")
+end
 
 # Convenience macro.
 const asl = "libasl";
