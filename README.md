@@ -5,13 +5,6 @@ OSX and Linux: [![Build Status](https://travis-ci.org/dpo/ampl.jl.svg?branch=mas
 
 ## How to Install
 
-This is a rudimentary Julia interface to the AMPL Solver Library (ASL). Installing on OSX and Linux should be easy using [Homebrew](http://brew.sh) and [LinuxBrew](http://brew.sh/linuxbrew):
-
-Make sure you have the ASL:
-
-    brew tap homebrew/science
-    brew install asl
-
 At the Julia prompt, clone this repository and build:
 
 ````JULIA
@@ -20,13 +13,7 @@ julia> Pkg.clone("https://github.com/dpo/ampl.jl.git")
 julia> Pkg.build("ampl")
 ````
 
-In order for Julia to find the AMPL interface library, its location must
-appear on your `LD_LIBRARY_PATH`:
-````
-export LD_LIBRARY_PATH=$(julia -E 'Pkg.dir()' | sed -e 's/"//g')/ampl/src:$LD_LIBRARY_PATH
-````
-
-Place the above in your `~/.bashrc` to make it permanent.
+This will automatically use BinDeps to download and install the AMPL interface library.
 
 ## Testing
 
