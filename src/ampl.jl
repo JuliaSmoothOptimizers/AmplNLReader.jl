@@ -16,10 +16,9 @@ else
 end
 
 # Convenience macro.
-const asl = "libasl";
 macro asl_call(func, args...)
   quote
-    ccall(($func, $asl), $(args...))
+    ccall(($func, libasl), $(args...))
   end
 end
 

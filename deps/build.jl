@@ -36,7 +36,7 @@ provides(SimpleBuild,
             (@build_steps begin
                ChangeDirectory(srcdir)
                (@build_steps begin
-                  `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DBUILD_SHARED_LIBS=True`
+                  `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True`
                   `make all`
                   `make test`
                   `make install`
@@ -44,4 +44,4 @@ provides(SimpleBuild,
              end)
           end), [libasl, libmp], os = :Unix)
 
-@BinDeps.install
+@BinDeps.install [:libasl => :libasl]
