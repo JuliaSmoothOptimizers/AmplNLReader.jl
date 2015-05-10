@@ -2,8 +2,8 @@ using BinDeps
 
 @BinDeps.setup
 
-libasl = library_dependency("libasl", aliases=["libasl.1", "libasl.1.4.0"])
-libmp = library_dependency("libmp", aliases=["libmp.1", "libmp.1.4.0"])
+libasl = library_dependency("libasl", aliases=["libasl.2", "libasl.2.0.1"])
+libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.0.1"])
 
 # Uncomment when the ASL makes it into Homebrew.jl.
 # @osx_only begin
@@ -21,14 +21,14 @@ libmp = library_dependency("libmp", aliases=["libmp.1", "libmp.1.4.0"])
 # end
 
 provides(Sources,
-         URI("https://github.com/ampl/mp/archive/2.0.0.tar.gz"),
+         URI("https://github.com/ampl/mp/archive/2.0.1.tar.gz"),
          [libasl, libmp],
-         SHA="b8bc51dfbf3db1628e0eb029a3f1305b0640018f67ff6cc397bd06a1e63a1e09",
-         unpacked_dir="mp-2.0.0")
+         SHA="628b5ef035b58184113e721b05b9340c8bce77d22f9261eaa2448ec96d97dd8a",
+         unpacked_dir="mp-2.0.1")
 
 depsdir = BinDeps.depsdir(libasl)
 prefix = joinpath(depsdir, "usr")
-srcdir = joinpath(depsdir, "src", "mp-2.0.0")
+srcdir = joinpath(depsdir, "src", "mp-2.0.1")
 
 provides(SimpleBuild,
          (@build_steps begin
