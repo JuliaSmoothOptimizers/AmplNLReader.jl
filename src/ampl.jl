@@ -9,11 +9,16 @@ export AmplModel, AmplException,
        obj, grad, cons, jth_con, jth_congrad, jth_sparse_congrad,
        jac_coord, jac, hprod, jth_hprod, ghjvprod, hess_coord, hess
 
+if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
+  include("../deps/deps.jl")
+else
+  error("ASL library not properly installed. Please run Pkg.build(\"ampl\")")
+end
+
 # Convenience macro.
-jampl = "libjampl";
-macro jampl_call(func, args...)
+macro asl_call(func, args...)
   quote
-    ccall(($func, $jampl), $(args...))
+    ccall(($func, libasl), $(args...))
   end
 end
 
@@ -30,40 +35,40 @@ type AmplModel
   __asl :: Ptr{Void};        # Pointer to internal ASL structure. Do not touch.
 
   function AmplModel(stub :: ASCIIString)
-    asl = @jampl_call(:jampl_init, Ptr{Void}, (Ptr{Uint8},), stub);
+    asl = @asl_call(:asl_init, Ptr{Void}, (Ptr{Uint8},), stub);
     asl == C_NULL && error("Error allocating ASL structure")
 
-    minimize = !bool(@jampl_call(:jampl_objtype, Int32, (Ptr{Void},), asl));
-    islp = bool(@jampl_call(:jampl_islp, Int32, (Ptr{Void},), asl));
+    minimize = !bool(@asl_call(:asl_objtype, Int32, (Ptr{Void},), asl));
+    islp = bool(@asl_call(:asl_islp, Int32, (Ptr{Void},), asl));
 
-    nvar = int(@jampl_call(:jampl_nvar, Int32, (Ptr{Void},), asl));
-    ncon = int(@jampl_call(:jampl_ncon, Int32, (Ptr{Void},), asl));
+    nvar = int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
+    ncon = int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
 
-    x0   = pointer_to_array(@jampl_call(:jampl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
+    x0   = pointer_to_array(@asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
-    y0   = pointer_to_array(@jampl_call(:jampl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
+    y0   = pointer_to_array(@asl_call(:asl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
 
-    lvar = pointer_to_array(@jampl_call(:jampl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
+    lvar = pointer_to_array(@asl_call(:asl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
-    uvar = pointer_to_array(@jampl_call(:jampl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
+    uvar = pointer_to_array(@asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
 
-    lcon = pointer_to_array(@jampl_call(:jampl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
+    lcon = pointer_to_array(@asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
-    ucon = pointer_to_array(@jampl_call(:jampl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
+    ucon = pointer_to_array(@asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
 
-    nnet = int(@jampl_call(:jampl_nlnc, Int32, (Ptr{Void},), asl));
-    nnln = int(@jampl_call(:jampl_nlc,  Int32, (Ptr{Void},), asl)) - nnet;
+    nnet = int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl));
+    nnln = int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl)) - nnet;
     nlin = ncon - nnln - nnet
 
     nln  = 1 : nnln
     net  = nnln+1 : nnln+nnet
     lin  = nnln+nnet+1 : ncon
 
-    nnzj = int(@jampl_call(:jampl_nnzj, Int32, (Ptr{Void},), asl));
-    nnzh = int(@jampl_call(:jampl_nnzh, Int32, (Ptr{Void},), asl));
+    nnzj = int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl));
+    nnzh = int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl));
 
     meta = NLPModelMeta(nvar, x0=x0, lvar=lvar, uvar=uvar,
                         ncon=ncon, y0=y0, lcon=lcon, ucon=ucon,
@@ -89,16 +94,16 @@ function write_sol(nlp :: AmplModel, msg :: ASCIIString, x :: Array{Float64,1}, 
   length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
   length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
 
-  @jampl_call(:jampl_write_sol, Void,
-                                (Ptr{Void}, Ptr{Uint8}, Ptr{Float64}, Ptr{Float64}),
-                                nlp.__asl,  msg,        x,            y)
+  @asl_call(:asl_write_sol, Void,
+            (Ptr{Void}, Ptr{Uint8}, Ptr{Float64}, Ptr{Float64}),
+             nlp.__asl, msg,        x,            y)
 end
 
 function amplmodel_finalize(nlp :: AmplModel)
   if nlp.__asl == C_NULL
     return
   end
-  @jampl_call(:jampl_finalize, Void, (Ptr{Void},), nlp.__asl)
+  @asl_call(:asl_finalize, Void, (Ptr{Void},), nlp.__asl)
   nlp.__asl = C_NULL
 end
 
@@ -122,16 +127,14 @@ function varscale(nlp :: AmplModel, s :: Array{Float64,1})
   @check_ampl_model
   length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
 
-  @jampl_call(:jampl_varscale, Void,
-              (Ptr{Void}, Ptr{Float64}),
-               nlp.__asl, s)
+  @asl_call(:asl_varscale, Void, (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
 end
 
 function lagscale(nlp :: AmplModel, s :: Float64)
   # Set the scaling factor σ in the Lagrangian:
   # L(x,y) = f(x) + σ ∑ yi ci(x).
   @check_ampl_model
-  @jampl_call(:jampl_lagscale, Void, (Ptr{Void}, Float64), nlp.__asl, s)
+  @asl_call(:asl_lagscale, Void, (Ptr{Void}, Float64), nlp.__asl, s)
 end
 
 function conscale(nlp :: AmplModel, s :: Array{Float64,1})
@@ -139,8 +142,7 @@ function conscale(nlp :: AmplModel, s :: Array{Float64,1})
   @check_ampl_model
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
-  @jampl_call(:jampl_conscale, Void,
-              (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
+  @asl_call(:asl_conscale, Void, (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
 end
 
 # Evaluating objective, constraints and derivatives.
@@ -150,7 +152,7 @@ function obj(nlp :: AmplModel, x :: Array{Float64,1})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  @jampl_call(:jampl_obj, Float64, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x)
+  @asl_call(:asl_obj, Float64, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x)
 end
 
 function grad(nlp :: AmplModel, x :: Array{Float64,1})
@@ -159,7 +161,7 @@ function grad(nlp :: AmplModel, x :: Array{Float64,1})
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   g = Array(Float64, nlp.meta.nvar)
-  @jampl_call(:jampl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, g)
+  @asl_call(:asl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, g)
   return g
 end
 
@@ -169,7 +171,7 @@ function cons(nlp :: AmplModel, x :: Array{Float64,1})
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   c = Array(Float64, nlp.meta.ncon)
-  @jampl_call(:jampl_cons, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, c)
+  @asl_call(:asl_cons, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, c)
   return c
 end
 
@@ -179,7 +181,7 @@ function jth_con(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  @jampl_call(:jampl_jcon, Float64, (Ptr{Void}, Ptr{Float64}, Int32), nlp.__asl, x, j-1)
+  @asl_call(:asl_jcon, Float64, (Ptr{Void}, Ptr{Float64}, Int32), nlp.__asl, x, j-1)
 end
 
 function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
@@ -189,9 +191,9 @@ function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   g = Array(Float64, nlp.meta.nvar)
-  @jampl_call(:jampl_jcongrad, Ptr{Float64},
-                              (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32),
-                               nlp.__asl, x,            g,            j-1)
+  @asl_call(:asl_jcongrad, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32),
+             nlp.__asl, x,            g,            j-1)
   return g
 end
 
@@ -201,14 +203,15 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  nnz = @jampl_call(:jampl_sparse_congrad_nnz, Csize_t,
-                     (Ptr{Void}, Cint), nlp.__asl, j-1)
+  nnz = @asl_call(:asl_sparse_congrad_nnz, Csize_t,
+                  (Ptr{Void}, Cint), nlp.__asl, j-1)
   inds = Array(Int64, nnz)
   vals = Array(Float64, nnz)
-  @jampl_call(:jampl_sparse_congrad, Void,
-                           (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}),
-                            nlp.__asl, x,            j-1,   inds,       vals)
-  return sparsevec(inds, vals, nlp.meta.nvar)
+  @asl_call(:asl_sparse_congrad, Void,
+            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}),
+             nlp.__asl, x,            j-1,   inds,       vals)
+  # Use 1-based indexing.
+  return sparsevec(inds+1, vals, nlp.meta.nvar)
 end
 
 function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
@@ -219,8 +222,11 @@ function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
   rows = Array(Int64, nlp.meta.nnzj)
   cols = Array(Int64, nlp.meta.nnzj)
   vals = Array(Float64, nlp.meta.nnzj)
-  @jampl_call(:jampl_jac, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}), nlp.__asl, x, rows, cols, vals)
-  return (rows, cols, vals)
+  @asl_call(:asl_jac, Void,
+            (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
+             nlp.__asl, x,            rows,       cols,       vals)
+  # Use 1-based indexing.
+  return (rows+1, cols+1, vals)
 end
 
 function jac(nlp :: AmplModel, x :: Array{Float64,1})
@@ -243,9 +249,9 @@ function hprod(nlp :: AmplModel,
   length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
 
   hv = Array(Float64, nlp.meta.nvar);
-  @jampl_call(:jampl_hprod, Ptr{Float64},
-                           (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
-                            nlp.__asl, y,            v,            hv,           obj_weight);
+  @asl_call(:asl_hprod, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
+             nlp.__asl, y,            v,            hv,           obj_weight);
   return hv
 end
 
@@ -260,9 +266,9 @@ function jth_hprod(nlp :: AmplModel,
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
 
   hv = Array(Float64, nlp.meta.nvar);
-  @jampl_call(:jampl_hvcompd, Ptr{Float64},
-                             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
-                              nlp.__asl, v,            hv,           j-1);
+  @asl_call(:asl_hvcompd, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
+             nlp.__asl, v,            hv,           j-1);
   return (j > 0) ? -hv : hv  # lagscale() flipped the sign of each constraint.
 end
 
@@ -277,9 +283,9 @@ function ghjvprod(nlp :: AmplModel,
   length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
 
   gHv = Array(Float64, nlp.meta.ncon);
-  @jampl_call(:jampl_ghjvprod, Ptr{Float64},
-                              (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
-                               nlp.__asl, g,            v,            gHv);
+  @asl_call(:asl_ghjvprod, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
+             nlp.__asl, g,            v,            gHv);
   return -gHv  # lagscale() flipped the sign of each constraint.
 end
 
@@ -296,10 +302,11 @@ function hess_coord(nlp :: AmplModel,
   rows = Array(Int64, nlp.meta.nnzh)
   cols = Array(Int64, nlp.meta.nnzh)
   vals = Array(Float64, nlp.meta.nnzh)
-  @jampl_call(:jampl_hess, Void,
-                          (Ptr{Void}, Ptr{Float64}, Float64, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
-                           nlp.__asl, y, obj_weight, rows, cols, vals)
-  return (rows, cols, vals)
+  @asl_call(:asl_hess, Void,
+            (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
+             nlp.__asl, y,            obj_weight, rows,       cols,       vals)
+  # Use 1-based indexing.
+  return (rows+1, cols+1, vals)
 end
 
 function hess(nlp :: AmplModel,

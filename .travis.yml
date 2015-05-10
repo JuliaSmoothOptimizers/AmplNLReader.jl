@@ -1,35 +1,24 @@
 language: julia
-
 os:
   - osx
   - linux
-
 julia:
   - release
-
-before_install:
-  # Install Linuxbrew.
-  - unset DYLD_LIBRARY_PATH
-  - if [ `uname` = "Linux" ]; then bash setup_travis_linux.sh; fi
-  - if [ `uname` = "Linux" ]; then export PATH="$HOME/.linuxbrew/bin:$PATH"; fi
-  - if [ `uname` = "Linux" ]; then export LD_LIBRARY_PATH="$HOME/.linuxbrew/lib:$LD_LIBRARY_PATH"; fi
-  - brew --config
-  - brew update
-  - if [ `uname` = "Linux" ]; then brew install pkg-config; fi
-
-install:
-  # Install ASL.
-  - brew tap homebrew/science
-  - brew install asl
-  - export JULIA_PKG_DIR=$(julia -E 'Pkg.dir()' | sed -e 's/"//g')
-  - export LD_LIBRARY_PATH=$JULIA_PKG_DIR/ampl/src:$LD_LIBRARY_PATH
-  - julia -E 'Pkg.clone("https://github.com/optimizers/NLP.jl.git")'
-  - julia -E 'Pkg.clone(pwd())';
-  - julia -E 'Pkg.build("ampl");'
-
+  - nightly
 script:
-  - julia --check-bounds=yes -e 'Pkg.test("ampl"; coverage=true)'
-
+#  - if [ `uname` == "Linux" ]; then sudo apt-add-repository ppa:kalakris/cmake -y; fi
+#  - if [ `uname` == "Linux" ]; then sudo apt-get update -qq -y; fi
+#  - if [ `uname` == "Linux" ]; then sudo apt-get install -y cmake; fi
+  - if [ `uname` == "Linux" ]; then
+    wget http://www.cmake.org/files/v3.2/cmake-3.2.1-Linux-x86_64.tar.gz;
+    tar -xzf cmake-3.2.1-Linux-x86_64.tar.gz;
+    sudo cp -fR cmake-3.2.1-Linux-x86_64/* /usr;
+    export PATH=`pwd`/cmake-3.2.1-Linux-x86_64/bin:$PATH; fi
+  - which cmake
+  - cmake --version
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.clone("https://github.com/optimizers/NLP.jl.git")'
+  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("ampl"); Pkg.test("ampl"; coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("ampl")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
 
