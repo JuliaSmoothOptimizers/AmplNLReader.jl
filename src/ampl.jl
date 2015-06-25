@@ -2,6 +2,7 @@
 # D. Orban, Vancouver, April 2014.
 module ampl
 
+require(Pkg.dir("MathProgBase","src","NLP","NLP.jl"))
 using NLP  # Defines NLPModelMeta.
 
 export AmplModel, AmplException,
