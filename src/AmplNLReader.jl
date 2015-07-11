@@ -1,6 +1,6 @@
 # A rudimentary AMPL interface in Julia.
 # D. Orban, Vancouver, April 2014.
-module ampl
+module AmplNLReader
 
 require(Pkg.dir("MathProgBase","src","NLP","NLP.jl"))
 using NLP  # Defines NLPModelMeta.
@@ -13,7 +13,7 @@ export AmplModel, AmplException,
 if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
   include("../deps/deps.jl")
 else
-  error("ASL library not properly installed. Please run Pkg.build(\"ampl\")")
+  error("ASL library not properly installed. Please run Pkg.build(\"AmplNLReader\")")
 end
 
 # Convenience macro.
@@ -319,4 +319,4 @@ function hess(nlp :: AmplModel,
   return sparse(rows, cols, vals, nlp.meta.nvar, nlp.meta.nvar)
 end
 
-end  # Module ampl
+end  # Module AmplNLReader

@@ -14,11 +14,10 @@ libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.0.1"])
 # Uncomment when there is a deb for the ASL.
 # provides(AptGet, "libasl-dev", [libasl, libmp], os = :Linux)
 
-# Uncomment when there is a Windows RPM for the ASL.
-# @windows_only begin
-#   using WinRPM
-#   provides(WinRPM.RPM, "asl", [libasl, libmp], os = :Windows)
-# end
+@windows_only begin
+  using WinRPM
+  provides(WinRPM.RPM, "ampl-mp", [libasl, libmp], os = :Windows)
+end
 
 provides(Sources,
          URI("https://github.com/ampl/mp/archive/2.0.1.tar.gz"),
