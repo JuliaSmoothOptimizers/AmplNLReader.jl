@@ -1,5 +1,5 @@
 using Base.Test
-using ampl
+using AmplNLReader
 
 function exercise_ampl_model(nlp :: AmplModel)
   show(STDOUT, nlp)

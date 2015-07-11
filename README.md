@@ -1,16 +1,16 @@
-# ampl.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
+# AmplNLReader.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
-OSX and Linux: [![Build Status](https://travis-ci.org/dpo/ampl.jl.svg?branch=master)](https://travis-ci.org/dpo/ampl.jl)
-[![Coverage Status](https://coveralls.io/repos/dpo/ampl.jl/badge.svg?branch=master)](https://coveralls.io/r/dpo/ampl.jl?branch=master)
+[![Build Status](https://travis-ci.org/dpo/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/dpo/AmplNLReader.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl)
+[![Coverage Status](https://coveralls.io/repos/dpo/AmplNLReader.jl/badge.svg?branch=master)](https://coveralls.io/r/dpo/AmplNLReader.jl?branch=master)
 
 ## How to Install
 
 At the Julia prompt, clone this repository and build:
 
 ````JULIA
-julia> Pkg.clone("https://github.com/optimizers/NLP.jl.git")
-julia> Pkg.clone("https://github.com/dpo/ampl.jl.git")
-julia> Pkg.build("ampl")
+julia> Pkg.clone("https://github.com/dpo/AmplNLReader.jl.git")
+julia> Pkg.build("AmplNLReader")
 ````
 
 This will automatically use BinDeps to download and install the AMPL interface library.
@@ -18,7 +18,7 @@ This will automatically use BinDeps to download and install the AMPL interface l
 ## Testing
 
 ````JULIA
-julia> Pkg.test("ampl")
+julia> Pkg.test("AmplNLReader")
 ````
 
 ## Creating a Model
@@ -27,7 +27,7 @@ For an introduction to the AMPL modeling language, see
 
 * R. Fourer, D. M. Gay, and B. W. Kernighan, [AMPL: A Mathematical Programming Language](http://ampl.com/REFS/amplmod.pdf), Management Science 36, pp. 519-554, 1990.
 * R. Fourer, D. M. Gay, and B. W. Kernighan, [AMPL: A Modeling Language for Mathematical Programming](http://ampl.com/BOOK/download.html), Duxbury Press / Brooks/Cole Publishing Company, 2003.
-* D. Orban, [The Lightning AMPL Tutorial. A Guide for Nonlinear Optimization Users](http://www.gerad.ca/fichiers/cahiers/G-2009-66.pdf), [GERAD](http://www.gerad.ca) Technical Report G-2009-66, 2009.
+* D. Orban, [The Lightning AMPL Tutorial. A Guide for Nonlinear Optimization Users](https://gerad.ca/en/papers/G-2009-66), [GERAD](http://www.gerad.ca) Technical Report G-2009-66, 2009.
 
 Suppose you have an AMPL model represented by the model and data files `mymodel.mod` and `mymodel.dat`. Decode this model as a so-called `nl` file using
 
@@ -36,7 +36,7 @@ Suppose you have an AMPL model represented by the model and data files `mymodel.
 For example:
 
 ````Julia
-julia> using ampl
+julia> using AmplNLReader
 
 julia> hs33 = AmplModel("hs033.nl")
 Minimization problem hs033.nl
@@ -63,7 +63,7 @@ There is preliminary support for holding multiple models in memory simultaneousl
 
 ## Optimization Problems
 
-`ampl.jl` currently focuses on continuous problems written in the form
+`AmplNLReader.jl` currently focuses on continuous problems written in the form
 
     optimize f(x)  subject to l ≤ x ≤ u,  L ≤ c(x) ≤ U,
 
