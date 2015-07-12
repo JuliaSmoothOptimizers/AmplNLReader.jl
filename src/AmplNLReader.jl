@@ -2,6 +2,8 @@
 # D. Orban, Vancouver, April 2014.
 module AmplNLReader
 
+using Compat
+
 require(Pkg.dir("MathProgBase","src","NLP","NLP.jl"))
 using NLP  # Defines NLPModelMeta.
 
@@ -39,11 +41,11 @@ type AmplModel
     asl = @asl_call(:asl_init, Ptr{Void}, (Ptr{Uint8},), stub);
     asl == C_NULL && error("Error allocating ASL structure")
 
-    minimize = !bool(@asl_call(:asl_objtype, Int32, (Ptr{Void},), asl));
-    islp = bool(@asl_call(:asl_islp, Int32, (Ptr{Void},), asl));
+    minimize = @asl_call(:asl_objtype, Int32, (Ptr{Void},), asl) == 0;
+    islp = @asl_call(:asl_islp, Int32, (Ptr{Void},), asl) != 0;
 
-    nvar = int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
-    ncon = int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
+    nvar = @compat Int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
+    ncon = @compat Int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
 
     x0   = pointer_to_array(@asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
@@ -60,16 +62,16 @@ type AmplModel
     ucon = pointer_to_array(@asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
 
-    nnet = int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl));
-    nnln = int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl)) - nnet;
+    nnet = @compat Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl));
+    nnln = @compat(Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl))) - nnet;
     nlin = ncon - nnln - nnet
 
     nln  = 1 : nnln
     net  = nnln+1 : nnln+nnet
     lin  = nnln+nnet+1 : ncon
 
-    nnzj = int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl));
-    nnzh = int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl));
+    nnzj = @compat Int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl));
+    nnzh = @compat Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl));
 
     meta = NLPModelMeta(nvar, x0=x0, lvar=lvar, uvar=uvar,
                         ncon=ncon, y0=y0, lcon=lcon, ucon=ucon,
