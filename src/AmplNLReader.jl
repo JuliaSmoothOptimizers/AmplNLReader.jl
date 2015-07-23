@@ -133,14 +133,18 @@ function varscale(nlp :: AmplModel, s :: Array{Float64,1})
   @check_ampl_model
   length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
 
-  @asl_call(:asl_varscale, Void, (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
+  err = Cint[0]
+  @asl_call(:asl_varscale, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Cint}), nlp.__asl, s, err)
+  err[1] == 0 || throw(AmplException("Error while scaling variables"))
 end
 
 function lagscale(nlp :: AmplModel, s :: Float64)
   # Set the scaling factor σ in the Lagrangian:
   # L(x,y) = f(x) + σ ∑ yi ci(x).
   @check_ampl_model
-  @asl_call(:asl_lagscale, Void, (Ptr{Void}, Float64), nlp.__asl, s)
+  err = Cint[0];
+  @asl_call(:asl_lagscale, Void, (Ptr{Void}, Float64, Ptr{Cint}), nlp.__asl, s, err)
+  err[1] == 0 || throw(AmplException("Error while scaling Lagrangian"))
 end
 
 function conscale(nlp :: AmplModel, s :: Array{Float64,1})
@@ -148,7 +152,9 @@ function conscale(nlp :: AmplModel, s :: Array{Float64,1})
   @check_ampl_model
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
-  @asl_call(:asl_conscale, Void, (Ptr{Void}, Ptr{Float64}), nlp.__asl, s)
+  err = Cint[0];
+  @asl_call(:asl_conscale, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Cint}), nlp.__asl, s, err)
+  err[1] == 0 || throw(AmplException("Error while scaling constraints"))
 end
 
 # Evaluating objective, constraints and derivatives.
@@ -158,7 +164,10 @@ function obj(nlp :: AmplModel, x :: Array{Float64,1})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  @asl_call(:asl_obj, Float64, (Ptr{Void}, Ptr{Float64}), nlp.__asl, x)
+  err = Cint[0]
+  f = @asl_call(:asl_obj, Float64, (Ptr{Void}, Ptr{Float64}, Ptr{Cint}), nlp.__asl, x, err)
+  err[1] == 0 || throw(AmplException("Error while evaluating objective"))
+  return f
 end
 
 function grad(nlp :: AmplModel, x :: Array{Float64,1})
@@ -166,8 +175,12 @@ function grad(nlp :: AmplModel, x :: Array{Float64,1})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
+  err = Cint[0]
   g = Array(Float64, nlp.meta.nvar)
-  @asl_call(:asl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, g)
+  @asl_call(:asl_grad, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}),
+             nlp.__asl, x,            g,            err)
+  err[1] == 0 || throw(AmplException("Error while evaluating objective gradient"))
   return g
 end
 
@@ -185,8 +198,12 @@ function cons(nlp :: AmplModel, x :: Array{Float64,1})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
+  err = Cint[0]
   c = Array(Float64, nlp.meta.ncon)
-  @asl_call(:asl_cons, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, c)
+  @asl_call(:asl_cons, Void,
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}),
+             nlp.__asl, x,            c,            err)
+  err[1] == 0 || throw(AmplException("Error while evaluating constraints"))
   return c
 end
 
@@ -205,7 +222,12 @@ function jth_con(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  @asl_call(:asl_jcon, Float64, (Ptr{Void}, Ptr{Float64}, Int32), nlp.__asl, x, j-1)
+  err = Cint[0]
+  cj = @asl_call(:asl_jcon, Float64,
+                 (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Cint}),
+                  nlp.__asl, x,            j-1,   err)
+  err[1] == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
+  return cj
 end
 
 function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
@@ -214,10 +236,12 @@ function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
+  err = Cint[0]
   g = Array(Float64, nlp.meta.nvar)
   @asl_call(:asl_jcongrad, Ptr{Float64},
-            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32),
-             nlp.__asl, x,            g,            j-1)
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32, Ptr{Cint}),
+             nlp.__asl, x,            g,            j-1,   err)
+  err[1] == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
   return g
 end
 
@@ -241,11 +265,14 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
 
   nnz = @asl_call(:asl_sparse_congrad_nnz, Csize_t,
                   (Ptr{Void}, Cint), nlp.__asl, j-1)
+
+  err = Cint[0]
   inds = Array(Int64, nnz)
   vals = Array(Float64, nnz)
   @asl_call(:asl_sparse_congrad, Void,
-            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}),
-             nlp.__asl, x,            j-1,   inds,       vals)
+            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}, Ptr{Cint}),
+             nlp.__asl, x,            j-1,   inds,       vals,         err)
+  err[1] == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
   # Use 1-based indexing.
   return sparsevec(inds+1, vals, nlp.meta.nvar)
 end
@@ -255,12 +282,14 @@ function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
+  err = Cint[0]
   rows = Array(Int64, nlp.meta.nnzj)
   cols = Array(Int64, nlp.meta.nnzj)
   vals = Array(Float64, nlp.meta.nnzj)
   @asl_call(:asl_jac, Void,
-            (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
-             nlp.__asl, x,            rows,       cols,       vals)
+            (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}, Ptr{Cint}),
+             nlp.__asl, x,            rows,       cols,       vals,         err)
+  err[1] == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
   # Use 1-based indexing.
   return (rows+1, cols+1, vals)
 end
