@@ -35,6 +35,8 @@ provides(SimpleBuild,
             (@build_steps begin
                ChangeDirectory(srcdir)
                (@build_steps begin
+                  `wget https://gist.githubusercontent.com/dpo/dde4bf8030209fcf0569/raw/ed93e2653b51b5da754aabc89e08704421860009/a.diff`
+                  `patch -p1 -i a.diff`
                   `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True`
                   `make all`
                   `make test`
