@@ -29,7 +29,10 @@ function exercise_ampl_model(nlp :: AmplModel)
   @printf("∇²L(x0,y0) = \n"); display(H); @printf("\n")
 
   e = ones(nlp.meta.nvar)
-  @printf("∇²L(x0,y0) * e = \n"); display(hprod(nlp, nlp.meta.x0, e)); @printf("\n")
+  he = hprod(nlp, nlp.meta.x0, e)
+  @printf("∇²L(x0,y0) * e = \n"); display(he); @printf("\n")
+  hprod!(nlp, nlp.meta.x0, e, he)
+  @printf("∇²L(x0,y0) * e = \n"); display(he); @printf("\n")
   for j = 1 : nlp.meta.ncon
     Hje = jth_hprod(nlp, nlp.meta.x0, e, j)
     @printf("∇²c_%d(x0) * e = ", j); display(Hje'); @printf("\n")
