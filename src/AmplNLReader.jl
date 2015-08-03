@@ -10,7 +10,7 @@ using NLP  # Defines NLPModelMeta.
 export AmplModel, AmplException,
        write_sol, amplmodel_finalize, varscale, lagscale, conscale,
        obj, grad, cons, jth_con, jth_congrad, jth_sparse_congrad,
-       jac_coord, jac, hprod, jth_hprod, ghjvprod, hess_coord, hess
+       jac_coord, jac, hprod, hprod!, jth_hprod, ghjvprod, hess_coord, hess
 
 if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
   include("../deps/deps.jl")
@@ -252,6 +252,25 @@ function hprod(nlp :: AmplModel,
   length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
 
   hv = Array(Float64, nlp.meta.nvar);
+  @asl_call(:asl_hprod, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
+             nlp.__asl, y,            v,            hv,           obj_weight);
+  return hv
+end
+
+function hprod!(nlp :: AmplModel,
+                x :: Array{Float64,1},
+                v :: Array{Float64,1},
+                hv :: Array{Float64,1};
+                y :: Array{Float64,1} = nlp.meta.y0,
+                obj_weight :: Float64 = 1.0)
+  # Evaluate the product of the Hessian of the Lagrangian at (x,y) with v.
+  # Note: x is in fact not used.
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(y) >= nlp.meta.ncon || error("y must have length at least $(nlp.meta.ncon)")
+  length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
+
   @asl_call(:asl_hprod, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
              nlp.__asl, y,            v,            hv,           obj_weight);
