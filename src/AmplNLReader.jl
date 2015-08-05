@@ -313,7 +313,7 @@ end
 
 function hess_coord(nlp :: AmplModel,
                     x :: Array{Float64,1};
-                    y :: Array{Float64,1} = nlp.y0,
+                    y :: Array{Float64,1} = nlp.meta.y0,
                     obj_weight :: Float64 = 1.0)
   # Evaluate the sparse Hessian of the Lagrangian at (x,y) in coordinate format.
   # Note: x is in fact not used.
@@ -333,7 +333,7 @@ end
 
 function hess(nlp :: AmplModel,
               x :: Array{Float64,1};
-              y :: Array{Float64,1} = nlp.y0,
+              y :: Array{Float64,1} = nlp.meta.y0,
               obj_weight :: Float64 = 1.0)
   @check_ampl_model
   (rows, cols, vals) = hess_coord(nlp, x, y=y, obj_weight=obj_weight);
