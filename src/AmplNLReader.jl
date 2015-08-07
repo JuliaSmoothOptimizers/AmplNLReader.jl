@@ -9,8 +9,11 @@ using NLP  # Defines NLPModelMeta.
 
 export AmplModel, AmplException,
        write_sol, amplmodel_finalize, varscale, lagscale, conscale,
-       obj, grad, cons, jth_con, jth_congrad, jth_sparse_congrad,
-       jac_coord, jac, hprod, hprod!, jth_hprod, ghjvprod, hess_coord, hess
+       obj, grad, grad!,
+       cons, cons!, jth_con, jth_congrad, jth_congrad!, jth_sparse_congrad,
+       jac_coord, jac, hprod, hprod!,
+       jth_hprod, jth_hprod!, ghjvprod, ghjvprod!,
+       hess_coord, hess
 
 if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
   include("../deps/deps.jl")
@@ -168,12 +171,30 @@ function grad(nlp :: AmplModel, x :: Array{Float64,1})
   return g
 end
 
+function grad!(nlp :: AmplModel, x :: Array{Float64,1}, g :: Array{Float64,1})
+  # Evaluate the objective function gradient at x.
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
+  @asl_call(:asl_grad, Ptr{Float64}, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, g)
+  return g
+end
+
 function cons(nlp :: AmplModel, x :: Array{Float64,1})
   # Evaluate the vector of constraints at x.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   c = Array(Float64, nlp.meta.ncon)
+  @asl_call(:asl_cons, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, c)
+  return c
+end
+
+function cons!(nlp :: AmplModel, x :: Array{Float64,1}, c :: Array{Float64,1})
+  # Evaluate the vector of constraints at x.
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
   @asl_call(:asl_cons, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Float64}), nlp.__asl, x, c)
   return c
 end
@@ -194,6 +215,18 @@ function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   g = Array(Float64, nlp.meta.nvar)
+  @asl_call(:asl_jcongrad, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32),
+             nlp.__asl, x,            g,            j-1)
+  return g
+end
+
+function jth_congrad!(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int, g :: Array{Float64,1})
+  # Evaluate the j-th constraint gradient at x.
+  @check_ampl_model
+  (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
   @asl_call(:asl_jcongrad, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32),
              nlp.__asl, x,            g,            j-1)
@@ -294,6 +327,24 @@ function jth_hprod(nlp :: AmplModel,
   return (j > 0) ? -hv : hv  # lagscale() flipped the sign of each constraint.
 end
 
+function jth_hprod!(nlp :: AmplModel,
+                    x :: Array{Float64,1}, v :: Array{Float64,1},
+                    j :: Int, hv :: Array{Float64,1})
+  # Compute the product of the Hessian of the j-th constraint at x with v.
+  # If j=0, compute the product of the Hessian of the objective at x with v.
+  # Note: x is in fact not used.
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
+  (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
+
+  @asl_call(:asl_hvcompd, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
+             nlp.__asl, v,            hv,           j-1);
+  j > 0 && (hv *= -1)  # lagscale() flipped the sign of each constraint.
+  return hv
+end
+
 function ghjvprod(nlp :: AmplModel,
                   x :: Array{Float64,1}, g :: Array{Float64,1}, v :: Array{Float64,1})
   # Compute the vector of dot products (g, Hj*v)
@@ -309,6 +360,23 @@ function ghjvprod(nlp :: AmplModel,
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
              nlp.__asl, g,            v,            gHv);
   return -gHv  # lagscale() flipped the sign of each constraint.
+end
+
+function ghjvprod(nlp :: AmplModel,
+                  x :: Array{Float64,1}, g :: Array{Float64,1},
+                  v :: Array{Float64,1}, gHv :: Array{Float64,1})
+  # Compute the vector of dot products (g, Hj*v)
+  # where Hj is the Hessian of the j-th constraint at x.
+  # Note: x is in fact not used.
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(g) >= nlp.meta.nvar || error("g must have length at least $(nlp.meta.nvar)")
+  length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
+
+  @asl_call(:asl_ghjvprod, Ptr{Float64},
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
+             nlp.__asl, g,            v,            gHv);
+  gHv *= -1  # lagscale() flipped the sign of each constraint.
 end
 
 function hess_coord(nlp :: AmplModel,
