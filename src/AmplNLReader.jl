@@ -391,9 +391,9 @@ function ghjvprod(nlp :: AmplModel,
   return -gHv  # lagscale() flipped the sign of each constraint.
 end
 
-function ghjvprod(nlp :: AmplModel,
-                  x :: Array{Float64,1}, g :: Array{Float64,1},
-                  v :: Array{Float64,1}, gHv :: Array{Float64,1})
+function ghjvprod!(nlp :: AmplModel,
+                   x :: Array{Float64,1}, g :: Array{Float64,1},
+                   v :: Array{Float64,1}, gHv :: Array{Float64,1})
   # Compute the vector of dot products (g, Hj*v)
   # where Hj is the Hessian of the j-th constraint at x.
   # Note: x is in fact not used.
