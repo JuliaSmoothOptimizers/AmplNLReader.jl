@@ -425,7 +425,8 @@ function hess_coord(nlp :: AmplModel,
             (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
              nlp.__asl, y,            obj_weight, rows,       cols,       vals)
   # Use 1-based indexing.
-  return (rows+1, cols+1, vals)
+  # Swap rows and cols to obtain the lower triangle.
+  return (cols+1, rows+1, vals)
 end
 
 function hess(nlp :: AmplModel,
