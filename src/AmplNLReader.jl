@@ -72,18 +72,30 @@ type AmplModel
     uvar = pointer_to_array(@asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
 
+    nbv = @compat Int(@asl_call(:asl_nbv, Int32, (Ptr{Void},), asl));
+    niv = @compat Int(@asl_call(:asl_niv, Int32, (Ptr{Void},), asl));
+    nlvb = @compat Int(@asl_call(:asl_nlvb, Int32, (Ptr{Void},), asl));
+    nlvo = @compat Int(@asl_call(:asl_nlvo, Int32, (Ptr{Void},), asl));
+    nlvc = @compat Int(@asl_call(:asl_nlvc, Int32, (Ptr{Void},), asl));
+    nlvbi = @compat Int(@asl_call(:asl_nlvbi, Int32, (Ptr{Void},), asl));
+    nlvci = @compat Int(@asl_call(:asl_nlvci, Int32, (Ptr{Void},), asl));
+    nlvoi = @compat Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Void},), asl));
+    nwv = @compat Int(@asl_call(:asl_nwv, Int32, (Ptr{Void},), asl));
+
     lcon = pointer_to_array(@asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
     ucon = pointer_to_array(@asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false);
 
-    nnet = @compat Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl));
-    nnln = @compat(Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl))) - nnet;
-    nlin = ncon - nnln - nnet
+    nlnet = @compat Int(@asl_call(:asl_lnc, Int32, (Ptr{Void},), asl));
+    nnnet = @compat Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl));
+    nnln = @compat(Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl))) - nnnet;
+    nlin = ncon - nnln - nnnet
 
     nln  = 1 : nnln
-    net  = nnln+1 : nnln+nnet
-    lin  = nnln+nnet+1 : ncon
+    nnet = nnln+1 : nnln+nnnet
+    lnet = nnln+nnnet+1 : nnln+nnnet+nlnet
+    lin  = nnln+nnnet+nlnet+1 : ncon
 
     nnzj = @compat Int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl));
     nnzh = @compat Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl));
@@ -91,8 +103,11 @@ type AmplModel
     meta = NLPModelMeta(nvar, x0=x0, lvar=lvar, uvar=uvar,
                         ncon=ncon, y0=y0, lcon=lcon, ucon=ucon,
                         nnzj=nnzj, nnzh=nnzh,
-                        lin=lin, nln=nln, net=net,
-                        nlin=nlin, nnln=nnln, nnet=nnet,
+                        nbv=nbv, niv=niv,
+                        nlvb=nlvb, nlvo=nlvo, nlvc=nlvc,
+                        nlvbi=nlvbi, nlvci=nlvci, nlvoi=nlvoi, nwv=nwv,
+                        lin=lin, nln=nln, nnet=nnet, lnet=lnet,
+                        nlin=nlin, nnln=nnln, nnet=nnet, nlnet=nlnet,
                         minimize=minimize, islp=islp, name=stub);
 
     nlp = new(meta, asl, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
