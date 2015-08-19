@@ -59,6 +59,8 @@ type AmplModel
     minimize = @asl_call(:asl_objtype, Int32, (Ptr{Void},), asl) == 0;
     islp = @asl_call(:asl_islp, Int32, (Ptr{Void},), asl) != 0;
 
+    nlo = @compat Int(@asl_call(:asl_nlo, Int32, (Ptr{Void},), asl));
+
     nvar = @compat Int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
     ncon = @compat Int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
 
@@ -72,6 +74,7 @@ type AmplModel
     uvar = pointer_to_array(@asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false);
 
+    nzo = @compat Int(@asl_call(:asl_nzo, Int32, (Ptr{Void},), asl));
     nbv = @compat Int(@asl_call(:asl_nbv, Int32, (Ptr{Void},), asl));
     niv = @compat Int(@asl_call(:asl_niv, Int32, (Ptr{Void},), asl));
     nlvb = @compat Int(@asl_call(:asl_nlvb, Int32, (Ptr{Void},), asl));
@@ -101,6 +104,7 @@ type AmplModel
     nnzh = @compat Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl));
 
     meta = NLPModelMeta(nvar, x0=x0, lvar=lvar, uvar=uvar,
+                        nlo=nlo, nnzo=nzo,
                         ncon=ncon, y0=y0, lcon=lcon, ucon=ucon,
                         nnzj=nnzj, nnzh=nnzh,
                         nbv=nbv, niv=niv,
