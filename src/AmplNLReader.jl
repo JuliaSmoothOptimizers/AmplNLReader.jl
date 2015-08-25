@@ -126,6 +126,7 @@ end
 
 # Methods associated to AmplModel instances.
 
+"Reset evaluation counters in `nlp`."
 function reset!(nlp :: AmplModel)
   nlp.neval_obj = 0
   nlp.neval_grad = 0
@@ -140,6 +141,7 @@ function reset!(nlp :: AmplModel)
   return nlp
 end
 
+"Write message `msg` along with primal and dual variables `x` and `y` to file."
 function write_sol(nlp :: AmplModel, msg :: ASCIIString, x :: Array{Float64,1}, y :: Array{Float64,1})
   @check_ampl_model
   length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
@@ -173,8 +175,8 @@ end
 
 # Scaling AmplModel instances.
 
+"Scale the vector of variables by the vector `s`."
 function varscale(nlp :: AmplModel, s :: Array{Float64,1})
-  # Scale the vector of variables by the vector s.
   @check_ampl_model
   length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
 
@@ -183,17 +185,18 @@ function varscale(nlp :: AmplModel, s :: Array{Float64,1})
   err[1] == 0 || throw(AmplException("Error while scaling variables"))
 end
 
-function lagscale(nlp :: AmplModel, s :: Float64)
-  # Set the scaling factor σ in the Lagrangian:
-  # L(x,y) = f(x) + σ ∑ yi ci(x).
+"""Set the scaling factor σ in the Lagrangian:
+    L(x,y) = f(x) + σ ∑ yi ci(x).
+"""
+function lagscale(nlp :: AmplModel, σ :: Float64)
   @check_ampl_model
   err = Cint[0];
-  @asl_call(:asl_lagscale, Void, (Ptr{Void}, Float64, Ptr{Cint}), nlp.__asl, s, err)
+  @asl_call(:asl_lagscale, Void, (Ptr{Void}, Float64, Ptr{Cint}), nlp.__asl, σ, err)
   err[1] == 0 || throw(AmplException("Error while scaling Lagrangian"))
 end
 
+"Scale the vector of constraints by the vector `s`."
 function conscale(nlp :: AmplModel, s :: Array{Float64,1})
-  # Scale the vector of constraints by the vector s.
   @check_ampl_model
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
@@ -204,8 +207,8 @@ end
 
 # Evaluating objective, constraints and derivatives.
 
+"Evaluate the objective function of `nlp` at `x`."
 function obj(nlp :: AmplModel, x :: Array{Float64,1})
-  # Evaluate the objective function at x.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -216,8 +219,8 @@ function obj(nlp :: AmplModel, x :: Array{Float64,1})
   return f
 end
 
+"Evaluate the gradient of the objective function at `x`."
 function grad(nlp :: AmplModel, x :: Array{Float64,1})
-  # Evaluate the objective function gradient at x.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -231,8 +234,8 @@ function grad(nlp :: AmplModel, x :: Array{Float64,1})
   return g
 end
 
+"Evaluate the gradient of the objective function at `x` in place."
 function grad!(nlp :: AmplModel, x :: Array{Float64,1}, g :: Array{Float64,1})
-  # Evaluate the objective function gradient at x.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -245,8 +248,8 @@ function grad!(nlp :: AmplModel, x :: Array{Float64,1}, g :: Array{Float64,1})
   return g
 end
 
+"Evaluate the constraints at `x`."
 function cons(nlp :: AmplModel, x :: Array{Float64,1})
-  # Evaluate the vector of constraints at x.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -260,8 +263,8 @@ function cons(nlp :: AmplModel, x :: Array{Float64,1})
   return c
 end
 
+"Evaluate the constraints at `x` in place."
 function cons!(nlp :: AmplModel, x :: Array{Float64,1}, c :: Array{Float64,1})
-  # Evaluate the vector of constraints at x.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -274,8 +277,8 @@ function cons!(nlp :: AmplModel, x :: Array{Float64,1}, c :: Array{Float64,1})
   return c
 end
 
+"Evaluate the `j`-th constraint at `x`."
 function jth_con(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
-  # Evaluate the j-th constraint at x.
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -289,8 +292,8 @@ function jth_con(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   return cj
 end
 
+"Evaluate the `j`-th constraint gradient at `x`."
 function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
-  # Evaluate the j-th constraint gradient at x.
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -305,8 +308,8 @@ function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   return g
 end
 
+"Evaluate the `j`-th constraint gradient at `x` in place."
 function jth_congrad!(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int, g :: Array{Float64,1})
-  # Evaluate the j-th constraint gradient at x.
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -320,8 +323,8 @@ function jth_congrad!(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int, g :: Ar
   return g
 end
 
+"Evaluate the `j`-th constraint sparse gradient at `x`."
 function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
-  # Evaluate the j-th constraint sparse gradient at x.
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -341,8 +344,8 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   return sparsevec(inds+1, vals, nlp.meta.nvar)
 end
 
+"Evaluate the constraints Jacobian at `x` in sparse coordinate format."
 function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
-  # Evaluate the sparse Jacobian of the constraints at x in coordinate format.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -359,19 +362,19 @@ function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
   return (rows+1, cols+1, vals)
 end
 
+"Evaluate the constraints Jacobian at `x` as a sparse matrix."
 function jac(nlp :: AmplModel, x :: Array{Float64,1})
-  # Evaluate the sparse Jacobian of the constraints.
   @check_ampl_model
   (rows, cols, vals) = jac_coord(nlp, x);
   return sparse(rows, cols, vals, nlp.meta.ncon, nlp.meta.nvar)
 end
 
+"Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v`."
 function hprod(nlp :: AmplModel,
                x :: Array{Float64,1},
                v :: Array{Float64,1};
                y :: Array{Float64,1} = nlp.meta.y0,
                obj_weight :: Float64 = 1.0)
-  # Evaluate the product of the Hessian of the Lagrangian at (x,y) with v.
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -386,13 +389,13 @@ function hprod(nlp :: AmplModel,
   return hv
 end
 
+"Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v` in place."
 function hprod!(nlp :: AmplModel,
                 x :: Array{Float64,1},
                 v :: Array{Float64,1},
                 hv :: Array{Float64,1};
                 y :: Array{Float64,1} = nlp.meta.y0,
                 obj_weight :: Float64 = 1.0)
-  # Evaluate the product of the Hessian of the Lagrangian at (x,y) with v.
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -406,10 +409,11 @@ function hprod!(nlp :: AmplModel,
   return hv
 end
 
+"""Evaluate the product of the `j`-th constraint Hessian at `x` with the vector `v`.
+The objective Hessian is used if `j=0`.
+"""
 function jth_hprod(nlp :: AmplModel,
                    x :: Array{Float64,1}, v :: Array{Float64,1}, j :: Int)
-  # Compute the product of the Hessian of the j-th constraint at x with v.
-  # If j=0, compute the product of the Hessian of the objective at x with v.
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -424,11 +428,12 @@ function jth_hprod(nlp :: AmplModel,
   return (j > 0) ? -hv : hv  # lagscale() flipped the sign of each constraint.
 end
 
+"""Evaluate the product of the `j`-th constraint Hessian at `x` with the vector `v` in place.
+The objective Hessian is used if `j=0`.
+"""
 function jth_hprod!(nlp :: AmplModel,
                     x :: Array{Float64,1}, v :: Array{Float64,1},
                     j :: Int, hv :: Array{Float64,1})
-  # Compute the product of the Hessian of the j-th constraint at x with v.
-  # If j=0, compute the product of the Hessian of the objective at x with v.
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -443,10 +448,11 @@ function jth_hprod!(nlp :: AmplModel,
   return hv
 end
 
+"""Compute the vector of dot products `(g, Hj*v)`
+where `Hj` is the Hessian of the `j`-th constraint at `x`.
+"""
 function ghjvprod(nlp :: AmplModel,
                   x :: Array{Float64,1}, g :: Array{Float64,1}, v :: Array{Float64,1})
-  # Compute the vector of dot products (g, Hj*v)
-  # where Hj is the Hessian of the j-th constraint at x.
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -461,11 +467,12 @@ function ghjvprod(nlp :: AmplModel,
   return -gHv  # lagscale() flipped the sign of each constraint.
 end
 
+"""Compute the vector of dot products `(g, Hj*v)` in place
+where `Hj` is the Hessian of the `j`-th constraint at `x`.
+"""
 function ghjvprod!(nlp :: AmplModel,
                    x :: Array{Float64,1}, g :: Array{Float64,1},
                    v :: Array{Float64,1}, gHv :: Array{Float64,1})
-  # Compute the vector of dot products (g, Hj*v)
-  # where Hj is the Hessian of the j-th constraint at x.
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -479,11 +486,13 @@ function ghjvprod!(nlp :: AmplModel,
   gHv *= -1  # lagscale() flipped the sign of each constraint.
 end
 
+"""Evaluate the Lagrangian Hessian at `(x,y)` in sparse coordinate format.
+Only the lower triangle is returned.
+"""
 function hess_coord(nlp :: AmplModel,
                     x :: Array{Float64,1};
                     y :: Array{Float64,1} = nlp.meta.y0,
                     obj_weight :: Float64 = 1.0)
-  # Evaluate the sparse Hessian of the Lagrangian at (x,y) in coordinate format.
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -501,6 +510,9 @@ function hess_coord(nlp :: AmplModel,
   return (cols+1, rows+1, vals)
 end
 
+"""Evaluate the Lagrangian Hessian at `(x,y)` as a sparse matrix.
+Only the lower triangle is returned.
+"""
 function hess(nlp :: AmplModel,
               x :: Array{Float64,1};
               y :: Array{Float64,1} = nlp.meta.y0,
