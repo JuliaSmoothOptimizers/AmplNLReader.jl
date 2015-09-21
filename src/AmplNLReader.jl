@@ -4,8 +4,8 @@ module AmplNLReader
 
 using Compat
 
-require(Pkg.dir("MathProgBase","src","NLP","NLP.jl"))
-using NLP  # Defines NLPModelMeta.
+include(Pkg.dir("MathProgBase","src","NLP","NLP.jl"))
+using .NLP  # Defines NLPModelMeta.
 
 export AmplModel, AmplException,
        reset!,
