@@ -1,15 +1,15 @@
 # AmplNLReader.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
-[![Build Status](https://travis-ci.org/dpo/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/dpo/AmplNLReader.jl)
+[![Build Status](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl)
-[![Coverage Status](https://coveralls.io/repos/dpo/AmplNLReader.jl/badge.svg?branch=master)](https://coveralls.io/r/dpo/AmplNLReader.jl?branch=master)
+[![Coverage Status](https://coveralls.io/repos/JuliaOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaOptimizers/AmplNLReader.jl?branch=master)
 
 ## How to Install
 
 At the Julia prompt, clone this repository and build:
 
 ````JULIA
-julia> Pkg.clone("https://github.com/dpo/AmplNLReader.jl.git")
+julia> Pkg.clone("https://github.com/JuliaOptimizers/AmplNLReader.jl.git")
 julia> Pkg.build("AmplNLReader")
 ````
 
