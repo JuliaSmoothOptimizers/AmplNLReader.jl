@@ -53,7 +53,7 @@ type AmplModel
   neval_hprod :: Int         # Number of Lagrangian/objective Hessian-vector products.
 
   function AmplModel(stub :: ASCIIString)
-    asl = @asl_call(:asl_init, Ptr{Void}, (Ptr{Uint8},), stub);
+    asl = @compat @asl_call(:asl_init, Ptr{Void}, (Ptr{UInt8},), stub);
     asl == C_NULL && error("Error allocating ASL structure")
 
     minimize = @asl_call(:asl_objtype, Int32, (Ptr{Void},), asl) == 0;
@@ -147,9 +147,9 @@ function write_sol(nlp :: AmplModel, msg :: ASCIIString, x :: Array{Float64,1}, 
   length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
   length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
 
-  @asl_call(:asl_write_sol, Void,
-            (Ptr{Void}, Ptr{Uint8}, Ptr{Float64}, Ptr{Float64}),
-             nlp.__asl, msg,        x,            y)
+  @compat @asl_call(:asl_write_sol, Void,
+                    (Ptr{Void}, Ptr{UInt8}, Ptr{Float64}, Ptr{Float64}),
+                     nlp.__asl, msg,        x,            y)
 end
 
 function amplmodel_finalize(nlp :: AmplModel)
