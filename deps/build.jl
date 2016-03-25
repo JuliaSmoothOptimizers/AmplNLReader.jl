@@ -1,15 +1,16 @@
 using BinDeps
+using Compat
 
 @BinDeps.setup
 
 libasl = library_dependency("libasl", aliases=["libasl.2", "libasl.2.0.3"])
 libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.0.3"])
 
-# Uncomment when the ASL makes it into Homebrew.jl.
-# @osx_only begin
-#   using Homebrew
-#   provides(Homebrew.HB, "asl", [libasl, libmp], os = :Darwin)
-# end
+@osx_only begin
+  using Homebrew
+  provides(Homebrew.HB, "homebrew/science/asl", [libasl, libmp], os = :Darwin)
+  push!(Libdl.DL_LOAD_PATH, joinpath(Homebrew.prefix("asl"), "lib"))
+end
 
 # Uncomment when there is a deb for the ASL.
 # provides(AptGet, "libasl-dev", [libasl, libmp], os = :Linux)
@@ -47,4 +48,4 @@ provides(SimpleBuild,
              end)
           end), [libasl, libmp], os = :Unix)
 
-@BinDeps.install [:libasl => :libasl]
+@BinDeps.install @compat Dict(:libasl => :libasl)
