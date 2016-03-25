@@ -6,11 +6,11 @@ using Compat
 libasl = library_dependency("libasl", aliases=["libasl.2", "libasl.2.0.3"])
 libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.0.3"])
 
-@osx_only begin
-  using Homebrew
-  provides(Homebrew.HB, "homebrew/science/asl", [libasl, libmp], os = :Darwin)
-  push!(Libdl.DL_LOAD_PATH, joinpath(Homebrew.prefix("asl"), "lib"))
-end
+# @osx_only begin
+#   using Homebrew
+#   provides(Homebrew.HB, "homebrew/science/asl", [libasl, libmp], os = :Darwin)
+#   push!(Libdl.DL_LOAD_PATH, joinpath(Homebrew.prefix("asl"), "lib"))
+# end
 
 # Uncomment when there is a deb for the ASL.
 # provides(AptGet, "libasl-dev", [libasl, libmp], os = :Linux)
