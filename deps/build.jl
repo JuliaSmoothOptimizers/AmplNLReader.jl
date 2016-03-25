@@ -3,9 +3,10 @@ using Compat
 
 @BinDeps.setup
 
-libasl = library_dependency("libasl", aliases=["libasl.2", "libasl.2.0.3"])
-libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.0.3"])
+libasl = library_dependency("libasl", aliases=["libasl.2", "libasl.2.1.0"])
+libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.1.0"])
 
+# Hopeless.
 # @osx_only begin
 #   using Homebrew
 #   provides(Homebrew.HB, "homebrew/science/asl", [libasl, libmp], os = :Darwin)
@@ -15,20 +16,21 @@ libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.0.3"])
 # Uncomment when there is a deb for the ASL.
 # provides(AptGet, "libasl-dev", [libasl, libmp], os = :Linux)
 
+# Outdated!
 @windows_only begin
   using WinRPM
   provides(WinRPM.RPM, "ampl-mp", [libasl, libmp], os = :Windows)
 end
 
 provides(Sources,
-         URI("https://github.com/ampl/mp/archive/2.0.3.tar.gz"),
+         URI("https://github.com/ampl/mp/archive/2.1.0.tar.gz"),
          [libasl, libmp],
-         SHA="4ae38da883cfdf077d57c488b03756d9068b1d5b8552db983f6690246edc71a8",
-         unpacked_dir="mp-2.0.3")
+         SHA="57d17db3e70e4a643c1b2141766a000b36057c2eeebd51964f30e2f8a56ee4d6",
+         unpacked_dir="mp-2.1.0")
 
 depsdir = BinDeps.depsdir(libasl)
 prefix = joinpath(depsdir, "usr")
-srcdir = joinpath(depsdir, "src", "mp-2.0.3")
+srcdir = joinpath(depsdir, "src", "mp-2.1.0")
 
 provides(SimpleBuild,
          (@build_steps begin
@@ -36,10 +38,6 @@ provides(SimpleBuild,
             (@build_steps begin
                ChangeDirectory(srcdir)
                (@build_steps begin
-                  `wget https://gist.githubusercontent.com/dpo/dde4bf8030209fcf0569/raw/ed93e2653b51b5da754aabc89e08704421860009/a.diff`
-                  `patch -p1 -i a.diff`
-                  `wget https://github.com/ampl/mp/commit/ffede9ec6b131a3a8f8a35de9ba5bf4c648527b5.diff`
-                  `patch -p1 -i ffede9ec6b131a3a8f8a35de9ba5bf4c648527b5.diff`
                   `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True`
                   `make all`
                   `make test`
