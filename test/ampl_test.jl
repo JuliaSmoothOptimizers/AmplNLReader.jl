@@ -42,6 +42,7 @@ function exercise_ampl_model(nlp :: AmplModel)
   @printf "(∇f(x0), ∇²c_j(x0) * e) = "; display(ghje'); @printf("\n")
 
   write_sol(nlp, "And the winner is...", rand(nlp.meta.nvar), rand(nlp.meta.ncon))
+  reset!(nlp)
 end
 
 hs33 = AmplModel("hs033.nl")
@@ -54,4 +55,3 @@ amplmodel_finalize(hs33)
 amplmodel_finalize(rosenbrock)
 amplmodel_finalize(hs9)
 @test_throws AmplException obj(hs9, hs9.meta.x0)
-
