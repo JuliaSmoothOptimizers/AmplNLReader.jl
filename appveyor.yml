@@ -14,6 +14,8 @@ build_script:
   - IF EXIST .git\shallow (git fetch --unshallow)
   - C:\projects\julia\bin\julia -e "versioninfo(); Pkg.init();"
   - C:\projects\julia\bin\julia -e "Pkg.clone(\"https://github.com/JuliaOptimizers/NLPModels.jl.git\"); Pkg.checkout(\"NLPModels\", \"develop\"); Pkg.build(\"NLPModels\")"
+  - C:\projects\julia\bin\julia -e "Pkg.clone(\"https://github.com/mlubin/AMPLMathProgInterface.jl.git\")"
+  - C:\projects\julia\bin\julia -e "Pkg.add(\"Ipopt\")"
   - C:\projects\julia\bin\julia -e "Pkg.clone(\"MathProgBase\"); Pkg.clone(pwd(), \"AmplNLReader\"); Pkg.build(\"AmplNLReader\");"
 
 test_script:

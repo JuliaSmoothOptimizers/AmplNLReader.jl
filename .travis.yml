@@ -15,6 +15,8 @@ script:
   - cmake --version
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone("https://github.com/JuliaOptimizers/NLPModels.jl.git"); Pkg.checkout("NLPModels", "develop"); Pkg.build("NLPModels")'
+  - julia -e 'Pkg.clone("https://github.com/mlubin/AMPLMathProgInterface.jl.git")'
+  - julia -e 'Pkg.add("Ipopt")'
   - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("AmplNLReader"); Pkg.test("AmplNLReader"; coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("AmplNLReader")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
