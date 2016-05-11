@@ -16,5 +16,8 @@ end
 
 include("ampl_model.jl")
 
+if Pkg.installed("AMPLMathProgInterface") != nothing
+  include("mpb_interface.jl")
+end
 
 end  # Module AmplNLReader
