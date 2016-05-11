@@ -1,8 +1,22 @@
 # AmplNLReader.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
-[![Build Status](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl)
-[![Coverage Status](https://coveralls.io/repos/JuliaOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaOptimizers/AmplNLReader.jl?branch=master)
+**OSX/Linux:**
+master
+[![Master Build Status](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl)
+develop
+[![Develop Build Status](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl.svg?branch=develop)](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl)
+
+**Windows:**
+master
+[![Master Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/master?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl/branch/master)
+develop
+[![Develop Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/develop?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl/branch/develop)
+
+**Coverage:**
+master
+[![Master Coverage Status](https://coveralls.io/repos/JuliaOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaOptimizers/AmplNLReader.jl?branch=master)
+develop
+[![Develop Coverage Status](https://coveralls.io/repos/JuliaOptimizers/AmplNLReader.jl/badge.svg?branch=develop&service=github)](https://coveralls.io/github/JuliaOptimizers/AmplNLReader.jl?branch=develop)
 
 ## How to Install
 
