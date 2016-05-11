@@ -2,6 +2,7 @@
 # D. Orban, Vancouver, April 2014.
 module AmplNLReader
 
+using NLPModels
 using Compat
 
 include(Pkg.dir("MathProgBase","src","NLP","NLP.jl"))
@@ -12,9 +13,9 @@ export AmplModel, AmplException,
        write_sol, amplmodel_finalize, varscale, lagscale, conscale,
        obj, grad, grad!,
        cons, cons!, jth_con, jth_congrad, jth_congrad!, jth_sparse_congrad,
-       jac_coord, jac, hprod, hprod!,
+       jac_coord, jac,
        jth_hprod, jth_hprod!, ghjvprod, ghjvprod!,
-       hess_coord, hess
+       hess_coord, hess, hprod, hprod!
 
 if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
   include("../deps/deps.jl")
@@ -37,20 +38,11 @@ macro check_ampl_model()
   :(nlp.__asl == C_NULL && throw(AmplException("Uninitialized AMPL model")))
 end
 
-type AmplModel
+type AmplModel <: AbstractNLPModel
   meta  :: NLPModelMeta;     # Problem metadata.
   __asl :: Ptr{Void};        # Pointer to internal ASL structure. Do not touch.
 
-  neval_obj :: Int           # Number of objective evaluations.
-  neval_grad :: Int          # Number of objective gradient evaluations.
-  neval_cons :: Int          # Number of constraint vector evaluations.
-  neval_icon :: Int          # Number of individual constraints evaluations.
-  neval_igrad :: Int         # Number of individual constraint gradient evaluations.
-  neval_jac :: Int           # Number of constraint Jacobian evaluations.
-  neval_jprod :: Int         # Number of Jacobian-vector products.
-  neval_jtprod :: Int        # Number of transposed Jacobian-vector products.
-  neval_hess :: Int          # Number of Lagrangian/objective Hessian evaluations.
-  neval_hprod :: Int         # Number of Lagrangian/objective Hessian-vector products.
+  counters :: Counters       # Evaluation counters
 
   function AmplModel(stub :: ASCIIString)
     asl = @compat @asl_call(:asl_init, Ptr{Void}, (Ptr{UInt8},), stub);
@@ -114,7 +106,7 @@ type AmplModel
                         nlin=nlin, nnln=nnln, nnet=nnet, nlnet=nlnet,
                         minimize=minimize, islp=islp, name=stub);
 
-    nlp = new(meta, asl, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    nlp = new(meta, asl, Counters());
 
     lagscale(nlp, -1.0)  # Lagrangian L(x,y) = f(x) - ∑ yi ci(x)
 
@@ -124,20 +116,25 @@ type AmplModel
 
 end
 
+
+# Import methods we override.
+import Base.show, Base.print
+import NLPModels.reset!
+import NLPModels.varscale, NLPModels.lagscale, NLPModels.conscale
+import NLPModels.obj, NLPModels.grad, NLPModels.grad!
+import NLPModels.cons, NLPModels.cons!, NLPModels.jth_con
+import NLPModels.jth_congrad, NLPModels.jth_congrad!, NLPModels.jth_sparse_congrad
+import NLPModels.jac_coord, NLPModels.jac
+import NLPModels.jth_hprod, NLPModels.jth_hprod!
+import NLPModels.ghjvprod, NLPModels.ghjvprod!
+import NLPModels.hess_coord, NLPModels.hess, NLPModels.hprod, NLPModels.hprod!
+
+
 # Methods associated to AmplModel instances.
 
 "Reset evaluation counters in `nlp`."
 function reset!(nlp :: AmplModel)
-  nlp.neval_obj = 0
-  nlp.neval_grad = 0
-  nlp.neval_cons = 0
-  nlp.neval_icon = 0
-  nlp.neval_igrad = 0
-  nlp.neval_jac = 0
-  nlp.neval_jprod = 0
-  nlp.neval_jtprod = 0
-  nlp.neval_hess = 0
-  nlp.neval_hprod = 0
+  reset!(nlp.counters)
   return nlp
 end
 
@@ -162,7 +159,6 @@ end
 
 # Displaying AmplModel instances.
 
-import Base.show, Base.print
 function show(io :: IO, nlp :: AmplModel)
   @check_ampl_model
   show(io, nlp.meta);
@@ -172,6 +168,7 @@ function print(io :: IO, nlp :: AmplModel)
   @check_ampl_model
   print(io, nlp.meta);
 end
+
 
 # Scaling AmplModel instances.
 
@@ -214,7 +211,7 @@ function obj(nlp :: AmplModel, x :: Array{Float64,1})
 
   err = Cint[0]
   f = @asl_call(:asl_obj, Float64, (Ptr{Void}, Ptr{Float64}, Ptr{Cint}), nlp.__asl, x, err)
-  nlp.neval_obj += 1
+  nlp.counters.neval_obj += 1
   err[1] == 0 || throw(AmplException("Error while evaluating objective"))
   return f
 end
@@ -229,7 +226,7 @@ function grad(nlp :: AmplModel, x :: Array{Float64,1})
   @asl_call(:asl_grad, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}),
              nlp.__asl, x,            g,            err)
-  nlp.neval_grad += 1
+  nlp.counters.neval_grad += 1
   err[1] == 0 || throw(AmplException("Error while evaluating objective gradient"))
   return g
 end
@@ -243,7 +240,7 @@ function grad!(nlp :: AmplModel, x :: Array{Float64,1}, g :: Array{Float64,1})
   @asl_call(:asl_grad, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}),
              nlp.__asl, x,            g,            err)
-  nlp.neval_grad += 1
+  nlp.counters.neval_grad += 1
   err[1] == 0 || throw(AmplException("Error while evaluating objective gradient"))
   return g
 end
@@ -258,7 +255,7 @@ function cons(nlp :: AmplModel, x :: Array{Float64,1})
   @asl_call(:asl_cons, Void,
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}),
              nlp.__asl, x,            c,            err)
-  nlp.neval_cons += 1
+  nlp.counters.neval_cons += 1
   err[1] == 0 || throw(AmplException("Error while evaluating constraints"))
   return c
 end
@@ -272,7 +269,7 @@ function cons!(nlp :: AmplModel, x :: Array{Float64,1}, c :: Array{Float64,1})
   @asl_call(:asl_cons, Void,
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}),
              nlp.__asl, x,            c,            err)
-  nlp.neval_cons += 1
+  nlp.counters.neval_cons += 1
   err[1] == 0 || throw(AmplException("Error while evaluating constraints"))
   return c
 end
@@ -287,7 +284,7 @@ function jth_con(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   cj = @asl_call(:asl_jcon, Float64,
                  (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Cint}),
                   nlp.__asl, x,            j-1,   err)
-  nlp.neval_icon += 1
+  nlp.counters.neval_jcon += 1
   err[1] == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
   return cj
 end
@@ -303,7 +300,7 @@ function jth_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   @asl_call(:asl_jcongrad, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32, Ptr{Cint}),
              nlp.__asl, x,            g,            j-1,   err)
-  nlp.neval_igrad += 1
+  nlp.counters.neval_jgrad += 1
   err[1] == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
   return g
 end
@@ -318,7 +315,7 @@ function jth_congrad!(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int, g :: Ar
   @asl_call(:asl_jcongrad, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32, Ptr{Cint}),
              nlp.__asl, x,            g,            j-1,   err)
-  nlp.neval_igrad += 1
+  nlp.counters.neval_jgrad += 1
   err[1] == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
   return g
 end
@@ -338,7 +335,7 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Array{Float64,1}, j :: Int)
   @asl_call(:asl_sparse_congrad, Void,
             (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}, Ptr{Cint}),
              nlp.__asl, x,            j-1,   inds,       vals,         err)
-  nlp.neval_igrad += 1
+  nlp.counters.neval_jgrad += 1
   err[1] == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
   # Use 1-based indexing.
   return sparsevec(inds+1, vals, nlp.meta.nvar)
@@ -356,7 +353,7 @@ function jac_coord(nlp :: AmplModel, x :: Array{Float64,1})
   @asl_call(:asl_jac, Void,
             (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}, Ptr{Cint}),
              nlp.__asl, x,            rows,       cols,       vals,         err)
-  nlp.neval_jac += 1
+  nlp.counters.neval_jac += 1
   err[1] == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
   # Use 1-based indexing.
   return (rows+1, cols+1, vals)
@@ -385,7 +382,7 @@ function hprod(nlp :: AmplModel,
   @asl_call(:asl_hprod, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
              nlp.__asl, y,            v,            hv,           obj_weight);
-  nlp.neval_hprod += 1
+  nlp.counters.neval_hprod += 1
   return hv
 end
 
@@ -405,7 +402,7 @@ function hprod!(nlp :: AmplModel,
   @asl_call(:asl_hprod, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
              nlp.__asl, y,            v,            hv,           obj_weight);
-  nlp.neval_hprod += 1
+  nlp.counters.neval_hprod += 1
   return hv
 end
 
@@ -424,7 +421,7 @@ function jth_hprod(nlp :: AmplModel,
   @asl_call(:asl_hvcompd, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
              nlp.__asl, v,            hv,           j-1);
-  nlp.neval_hprod += 1
+  nlp.counters.neval_jhprod += 1
   return (j > 0) ? -hv : hv  # lagscale() flipped the sign of each constraint.
 end
 
@@ -443,7 +440,7 @@ function jth_hprod!(nlp :: AmplModel,
   @asl_call(:asl_hvcompd, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
              nlp.__asl, v,            hv,           j-1);
-  nlp.neval_hprod += 1
+  nlp.counters.neval_jhprod += 1
   j > 0 && (hv *= -1)  # lagscale() flipped the sign of each constraint.
   return hv
 end
@@ -463,7 +460,7 @@ function ghjvprod(nlp :: AmplModel,
   @asl_call(:asl_ghjvprod, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
              nlp.__asl, g,            v,            gHv);
-  nlp.neval_hprod += nlp.meta.ncon
+  nlp.counters.neval_hprod += nlp.meta.ncon
   return -gHv  # lagscale() flipped the sign of each constraint.
 end
 
@@ -482,7 +479,7 @@ function ghjvprod!(nlp :: AmplModel,
   @asl_call(:asl_ghjvprod, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
              nlp.__asl, g,            v,            gHv);
-  nlp.neval_hprod += nlp.meta.ncon
+  nlp.counters.neval_hprod += nlp.meta.ncon
   gHv *= -1  # lagscale() flipped the sign of each constraint.
 end
 
@@ -504,7 +501,7 @@ function hess_coord(nlp :: AmplModel,
   @asl_call(:asl_hess, Void,
             (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
              nlp.__asl, y,            obj_weight, rows,       cols,       vals)
-  nlp.neval_hess += 1
+  nlp.counters.neval_hess += 1
   # Use 1-based indexing.
   # Swap rows and cols to obtain the lower triangle.
   return (cols+1, rows+1, vals)

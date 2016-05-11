@@ -12,7 +12,9 @@ install:
 build_script:
 # Need to convert from shallow to complete for Pkg.clone to work
   - IF EXIST .git\shallow (git fetch --unshallow)
-  - C:\projects\julia\bin\julia -e "versioninfo(); Pkg.init(); Pkg.clone(\"MathProgBase\"); Pkg.clone(pwd(), \"AmplNLReader\"); Pkg.build(\"AmplNLReader\");"
+  - C:\projects\julia\bin\julia -e "versioninfo(); Pkg.init();"
+  - C:\projects\julia\bin\julia -e "Pkg.clone(\"https://github.com/JuliaOptimizers/NLPModels.jl.git\"); Pkg.checkout(\"NLPModels\", \"develop\"); Pkg.build(\"NLPModels\")"
+  - C:\projects\julia\bin\julia -e "Pkg.clone(\"MathProgBase\"); Pkg.clone(pwd(), \"AmplNLReader\"); Pkg.build(\"AmplNLReader\");"
 
 test_script:
   - C:\projects\julia\bin\julia -e "Pkg.test(\"AmplNLReader\")"
