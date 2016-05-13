@@ -5,9 +5,6 @@ module AmplNLReader
 using NLPModels
 using Compat
 
-include(Pkg.dir("MathProgBase","src","NLP","NLP.jl"))
-using .NLP  # Defines NLPModelMeta.
-
 if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
   include("../deps/deps.jl")
 else
