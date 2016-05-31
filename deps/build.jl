@@ -3,8 +3,8 @@ using Compat
 
 @BinDeps.setup
 
-libasl = library_dependency("libasl", aliases=["libasl.2", "libasl.2.1.0"])
-libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.1.0"])
+libasl = library_dependency("libasl", aliases=["libasl.3", "libasl.3.1.0"])
+libmp = library_dependency("libmp", aliases=["libmp.3", "libmp.3.1.0"])
 
 # Hopeless.
 # @osx_only begin
@@ -23,14 +23,14 @@ libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.1.0"])
 end
 
 provides(Sources,
-         URI("https://github.com/ampl/mp/archive/2.1.0.tar.gz"),
+         URI("https://github.com/ampl/mp/archive/3.1.0.tar.gz"),
          [libasl, libmp],
-         SHA="57d17db3e70e4a643c1b2141766a000b36057c2eeebd51964f30e2f8a56ee4d6",
-         unpacked_dir="mp-2.1.0")
+         SHA="587c1a88f4c8f57bef95b58a8586956145417c8039f59b1758365ccc5a309ae9",
+         unpacked_dir="mp-3.1.0")
 
 depsdir = BinDeps.depsdir(libasl)
 prefix = joinpath(depsdir, "usr")
-srcdir = joinpath(depsdir, "src", "mp-2.1.0")
+srcdir = joinpath(depsdir, "src", "mp-3.1.0")
 
 provides(SimpleBuild,
          (@build_steps begin
