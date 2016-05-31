@@ -2,7 +2,8 @@ using Ipopt
 using MathProgBase
 
 # pass an AmplModel to IPOPT
-nlp = AmplModel("hs006.nl")
+path = dirname(@__FILE__)
+nlp = AmplModel(joinpath(path, "hs006.nl"))
 model = NLPtoMPB(nlp, IpoptSolver())
 @assert isa(model, Ipopt.IpoptMathProgModel)
 MathProgBase.optimize!(model)

@@ -28,7 +28,7 @@ type AmplModel <: AbstractNLPModel
 
   counters :: Counters       # Evaluation counters
 
-  function AmplModel(stub :: ASCIIString)
+  function AmplModel(stub :: AbstractString)
     asl = @compat @asl_call(:asl_init, Ptr{Void}, (Ptr{UInt8},), stub);
     asl == C_NULL && error("Error allocating ASL structure")
 
