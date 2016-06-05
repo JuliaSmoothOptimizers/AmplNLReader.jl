@@ -92,8 +92,6 @@ type AmplModel <: AbstractNLPModel
 
     nlp = new(meta, asl, Counters());
 
-    lagscale(nlp, -1.0)  # Lagrangian L(x,y) = f(x) - ∑ yi ci(x)
-
     finalizer(nlp, amplmodel_finalize)
     return nlp
   end
