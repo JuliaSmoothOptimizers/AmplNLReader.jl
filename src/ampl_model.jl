@@ -326,7 +326,8 @@ Evaluate the Jacobian-vector product at `x`.
 Warning: Currently building the Jacobian for this.
 """
 function jprod(nlp :: AmplModel, x :: Array{Float64,1}, v :: Array{Float64,1})
-  return jac(nlp, x) * v
+  Jv = zeros(nlp.meta.ncon)
+  return jprod!(nlp, x, v, Jv)
 end
 
 """
@@ -338,6 +339,7 @@ function jprod!(nlp :: AmplModel,
                 v :: Array{Float64,1},
                 Jv :: Array{Float64,1})
   Jv[:] = jac(nlp, x) * v
+  return Jv
 end
 
 """
@@ -345,7 +347,8 @@ Evaluate the transposed-Jacobian-vector product at `x`.
 Warning: Currently building the Jacobian for this.
 """
 function jtprod(nlp :: AmplModel, x :: Array{Float64,1}, v :: Array{Float64,1})
-  return jac(nlp, x)' * v
+  Jtv = zeros(nlp.meta.nvar)
+  return jtprod!(nlp, x, v, Jtv)
 end
 
 """
@@ -353,10 +356,11 @@ Evaluate the transposed-Jacobian-vector product at `x` in place.
 Warning: Currently building the Jacobian for this.
 """
 function jtprod!(nlp :: AmplModel,
-                x :: Array{Float64,1},
-                v :: Array{Float64,1},
-                Jtv :: Array{Float64,1})
+                 x :: Array{Float64,1},
+                 v :: Array{Float64,1},
+                 Jtv :: Array{Float64,1})
   Jtv[:] = jac(nlp, x)' * v
+  return Jtv
 end
 
 "Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v`."
