@@ -3,7 +3,7 @@ export AmplModel, AmplException,
        write_sol, amplmodel_finalize, varscale, lagscale, conscale,
        obj, grad, grad!,
        cons, cons!, jth_con, jth_congrad, jth_congrad!, jth_sparse_congrad,
-       jac_coord, jac,
+       jac_coord, jac, jprod, jprod!, jtprod, jtprod!,
        jth_hprod, jth_hprod!, ghjvprod, ghjvprod!,
        hess_coord, hess, hprod, hprod!
 
@@ -107,6 +107,7 @@ import NLPModels.obj, NLPModels.grad, NLPModels.grad!
 import NLPModels.cons, NLPModels.cons!, NLPModels.jth_con
 import NLPModels.jth_congrad, NLPModels.jth_congrad!, NLPModels.jth_sparse_congrad
 import NLPModels.jac_coord, NLPModels.jac
+import NLPModels.jprod, NLPModels.jtprod, NLPModels.jprod!, NLPModels.jtprod!
 import NLPModels.jth_hprod, NLPModels.jth_hprod!
 import NLPModels.ghjvprod, NLPModels.ghjvprod!
 import NLPModels.hess_coord, NLPModels.hess, NLPModels.hprod, NLPModels.hprod!
@@ -318,6 +319,44 @@ function jac(nlp :: AmplModel, x :: Array{Float64,1})
   @check_ampl_model
   (rows, cols, vals) = jac_coord(nlp, x);
   return sparse(rows, cols, vals, nlp.meta.ncon, nlp.meta.nvar)
+end
+
+"""
+Evaluate the Jacobian-vector product at `x`.
+Warning: Currently building the Jacobian for this.
+"""
+function jprod(nlp :: AmplModel, x :: Array{Float64,1}, v :: Array{Float64,1})
+  return jac(nlp, x) * v
+end
+
+"""
+Evaluate the Jacobian-vector product at `x` in place.
+Warning: Currently building the Jacobian for this.
+"""
+function jprod!(nlp :: AmplModel,
+                x :: Array{Float64,1},
+                v :: Array{Float64,1},
+                Jv :: Array{Float64,1})
+  Jv[:] = jac(nlp, x) * v
+end
+
+"""
+Evaluate the transposed-Jacobian-vector product at `x`.
+Warning: Currently building the Jacobian for this.
+"""
+function jtprod(nlp :: AmplModel, x :: Array{Float64,1}, v :: Array{Float64,1})
+  return jac(nlp, x)' * v
+end
+
+"""
+Evaluate the transposed-Jacobian-vector product at `x` in place.
+Warning: Currently building the Jacobian for this.
+"""
+function jtprod!(nlp :: AmplModel,
+                x :: Array{Float64,1},
+                v :: Array{Float64,1},
+                Jtv :: Array{Float64,1})
+  Jtv[:] = jac(nlp, x)' * v
 end
 
 "Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v`."
