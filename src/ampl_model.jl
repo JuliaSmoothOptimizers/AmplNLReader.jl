@@ -368,9 +368,9 @@ function hprod(nlp :: AmplModel,
                x :: Array{Float64,1},
                v :: Array{Float64,1};
                y :: Array{Float64,1} = nlp.meta.y0,
-               obj_weight :: Float64 = 1.0)
+               σ :: Float64 = 1.0)
   hv = Array(Float64, nlp.meta.nvar);
-  return hprod!(nlp, x, v, hv, y=y, obj_weight=obj_weight)
+  return hprod!(nlp, x, v, hv, y=y, σ=σ)
 end
 
 "Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v` in place."
@@ -379,7 +379,7 @@ function hprod!(nlp :: AmplModel,
                 v :: Array{Float64,1},
                 hv :: Array{Float64,1};
                 y :: Array{Float64,1} = nlp.meta.y0,
-                obj_weight :: Float64 = 1.0)
+                σ :: Float64 = 1.0)
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -388,7 +388,7 @@ function hprod!(nlp :: AmplModel,
 
   @asl_call(:asl_hprod, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
-             nlp.__asl, y,            v,            hv,           obj_weight);
+             nlp.__asl, y,            v,            hv,           σ);
   nlp.counters.neval_hprod += 1
   return hv
 end
@@ -456,7 +456,7 @@ Only the lower triangle is returned.
 function hess_coord(nlp :: AmplModel,
                     x :: Array{Float64,1};
                     y :: Array{Float64,1} = nlp.meta.y0,
-                    obj_weight :: Float64 = 1.0)
+                    σ :: Float64 = 1.0)
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -467,7 +467,7 @@ function hess_coord(nlp :: AmplModel,
   vals = Array(Float64, nlp.meta.nnzh)
   @asl_call(:asl_hess, Void,
             (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
-             nlp.__asl, y,            obj_weight, rows,       cols,       vals)
+             nlp.__asl, y,            σ,          rows,       cols,       vals)
   nlp.counters.neval_hess += 1
   # Use 1-based indexing.
   # Swap rows and cols to obtain the lower triangle.
@@ -480,8 +480,8 @@ Only the lower triangle is returned.
 function hess(nlp :: AmplModel,
               x :: Array{Float64,1};
               y :: Array{Float64,1} = nlp.meta.y0,
-              obj_weight :: Float64 = 1.0)
+              σ :: Float64 = 1.0)
   @check_ampl_model
-  (rows, cols, vals) = hess_coord(nlp, x, y=y, obj_weight=obj_weight);
+  (rows, cols, vals) = hess_coord(nlp, x, y=y, σ=σ);
   return sparse(rows, cols, vals, nlp.meta.nvar, nlp.meta.nvar)
 end
