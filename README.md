@@ -2,28 +2,28 @@
 
 **OSX/Linux:**
 master
-[![Master Build Status](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl)
+[![Master Build Status](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl)
 develop
-[![Develop Build Status](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl.svg?branch=develop)](https://travis-ci.org/JuliaOptimizers/AmplNLReader.jl)
+[![Develop Build Status](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl.svg?branch=develop)](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl)
 
 **Windows:**
 master
-[![Master Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/master?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl/branch/master)
+[![Master Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/master?svg=true)](https://ci.appveyor.com/project/JuliaSmoothOptimizers/amplnlreader-jl/branch/master)
 develop
-[![Develop Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/develop?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl/branch/develop)
+[![Develop Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/develop?svg=true)](https://ci.appveyor.com/project/JuliaSmoothOptimizers/amplnlreader-jl/branch/develop)
 
 **Coverage:**
 master
-[![Master Coverage Status](https://coveralls.io/repos/JuliaOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaOptimizers/AmplNLReader.jl?branch=master)
+[![Master Coverage Status](https://coveralls.io/repos/JuliaSmoothOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaSmoothOptimizers/AmplNLReader.jl?branch=master)
 develop
-[![Develop Coverage Status](https://coveralls.io/repos/JuliaOptimizers/AmplNLReader.jl/badge.svg?branch=develop&service=github)](https://coveralls.io/github/JuliaOptimizers/AmplNLReader.jl?branch=develop)
+[![Develop Coverage Status](https://coveralls.io/repos/JuliaSmoothOptimizers/AmplNLReader.jl/badge.svg?branch=develop&service=github)](https://coveralls.io/github/JuliaSmoothOptimizers/AmplNLReader.jl?branch=develop)
 
 ## How to Install
 
 At the Julia prompt, clone this repository and build:
 
 ````JULIA
-julia> Pkg.clone("https://github.com/JuliaOptimizers/AmplNLReader.jl.git")
+julia> Pkg.clone("https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl.git")
 julia> Pkg.build("AmplNLReader")
 ````
 
