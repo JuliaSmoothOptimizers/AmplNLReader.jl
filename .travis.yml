@@ -21,7 +21,7 @@ script:
   - which cmake
   - cmake --version
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.clone("https://github.com/JuliaOptimizers/NLPModels.jl.git"); Pkg.checkout("NLPModels", "develop"); Pkg.build("NLPModels")'
+  - julia -e 'Pkg.clone("https://github.com/JuliaSmoothOptimizers/NLPModels.jl.git"); Pkg.checkout("NLPModels", "develop"); Pkg.build("NLPModels")'
   - julia -e 'Pkg.clone("https://github.com/mlubin/AMPLMathProgInterface.jl.git")'
   - julia -e 'Pkg.add("Ipopt")'
   - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("AmplNLReader"); Pkg.test("AmplNLReader"; coverage=true)'
