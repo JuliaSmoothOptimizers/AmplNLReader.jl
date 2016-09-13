@@ -340,7 +340,7 @@ function jprod!(nlp :: AmplModel,
                 Jv :: Array{Float64,1})
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jprod += 1
-  Jv[:] = jac(nlp, x) * v
+  Jv[1:nlp.meta.ncon] = jac(nlp, x) * v
   return Jv
 end
 
@@ -363,7 +363,7 @@ function jtprod!(nlp :: AmplModel,
                  Jtv :: Array{Float64,1})
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jtprod += 1
-  Jtv[:] = jac(nlp, x)' * v
+  Jtv[1:nlp.meta.nvar] = jac(nlp, x)' * v
   return Jtv
 end
 
