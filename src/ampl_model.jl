@@ -15,7 +15,7 @@ macro asl_call(func, args...)
 end
 
 type AmplException
-  msg :: ASCIIString
+  msg :: String
 end
 
 macro check_ampl_model()
@@ -40,35 +40,35 @@ type AmplModel <: AbstractNLPModel
     nvar = @compat Int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
     ncon = @compat Int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
 
-    x0   = pointer_to_array(@asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
-                            (nvar,), false);
-    y0   = pointer_to_array(@asl_call(:asl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
-                            (ncon,), false);
+    x0   = @compat unsafe_wrap(Array, @asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
+                            (nvar,), false)
+    y0   = @compat unsafe_wrap(Array, @asl_call(:asl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
+                            (ncon,), false)
 
-    lvar = pointer_to_array(@asl_call(:asl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
-                            (nvar,), false);
-    uvar = pointer_to_array(@asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
-                            (nvar,), false);
+    lvar = @compat unsafe_wrap(Array, @asl_call(:asl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
+                            (nvar,), false)
+    uvar = @compat unsafe_wrap(Array, @asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
+                            (nvar,), false)
 
-    nzo = @compat Int(@asl_call(:asl_nzo, Int32, (Ptr{Void},), asl));
-    nbv = @compat Int(@asl_call(:asl_nbv, Int32, (Ptr{Void},), asl));
-    niv = @compat Int(@asl_call(:asl_niv, Int32, (Ptr{Void},), asl));
-    nlvb = @compat Int(@asl_call(:asl_nlvb, Int32, (Ptr{Void},), asl));
-    nlvo = @compat Int(@asl_call(:asl_nlvo, Int32, (Ptr{Void},), asl));
-    nlvc = @compat Int(@asl_call(:asl_nlvc, Int32, (Ptr{Void},), asl));
-    nlvbi = @compat Int(@asl_call(:asl_nlvbi, Int32, (Ptr{Void},), asl));
-    nlvci = @compat Int(@asl_call(:asl_nlvci, Int32, (Ptr{Void},), asl));
-    nlvoi = @compat Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Void},), asl));
-    nwv = @compat Int(@asl_call(:asl_nwv, Int32, (Ptr{Void},), asl));
+    nzo = @compat Int(@asl_call(:asl_nzo, Int32, (Ptr{Void},), asl))
+    nbv = @compat Int(@asl_call(:asl_nbv, Int32, (Ptr{Void},), asl))
+    niv = @compat Int(@asl_call(:asl_niv, Int32, (Ptr{Void},), asl))
+    nlvb = @compat Int(@asl_call(:asl_nlvb, Int32, (Ptr{Void},), asl))
+    nlvo = @compat Int(@asl_call(:asl_nlvo, Int32, (Ptr{Void},), asl))
+    nlvc = @compat Int(@asl_call(:asl_nlvc, Int32, (Ptr{Void},), asl))
+    nlvbi = @compat Int(@asl_call(:asl_nlvbi, Int32, (Ptr{Void},), asl))
+    nlvci = @compat Int(@asl_call(:asl_nlvci, Int32, (Ptr{Void},), asl))
+    nlvoi = @compat Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Void},), asl))
+    nwv = @compat Int(@asl_call(:asl_nwv, Int32, (Ptr{Void},), asl))
 
-    lcon = pointer_to_array(@asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
-                            (ncon,), false);
-    ucon = pointer_to_array(@asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
-                            (ncon,), false);
+    lcon = @compat unsafe_wrap(Array, @asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
+                            (ncon,), false)
+    ucon = @compat unsafe_wrap(Array, @asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
+                            (ncon,), false)
 
-    nlnet = @compat Int(@asl_call(:asl_lnc, Int32, (Ptr{Void},), asl));
-    nnnet = @compat Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl));
-    nnln = @compat(Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl))) - nnnet;
+    nlnet = @compat Int(@asl_call(:asl_lnc, Int32, (Ptr{Void},), asl))
+    nnnet = @compat Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl))
+    nnln = @compat(Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl))) - nnnet
     nlin = ncon - nnln - nnnet
 
     nln  = 1 : nnln
@@ -76,8 +76,8 @@ type AmplModel <: AbstractNLPModel
     lnet = nnln+nnnet+1 : nnln+nnnet+nlnet
     lin  = nnln+nnnet+nlnet+1 : ncon
 
-    nnzj = @compat Int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl));
-    nnzh = @compat Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl));
+    nnzj = @compat Int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl))
+    nnzh = @compat Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl))
 
     meta = NLPModelMeta(nvar, x0=x0, lvar=lvar, uvar=uvar,
                         nlo=nlo, nnzo=nzo,
@@ -88,9 +88,9 @@ type AmplModel <: AbstractNLPModel
                         nlvbi=nlvbi, nlvci=nlvci, nlvoi=nlvoi, nwv=nwv,
                         lin=lin, nln=nln, nnet=nnet, lnet=lnet,
                         nlin=nlin, nnln=nnln, nnet=nnet, nlnet=nlnet,
-                        minimize=minimize, islp=islp, name=stub);
+                        minimize=minimize, islp=islp, name=stub)
 
-    nlp = new(meta, asl, Counters());
+    nlp = new(meta, asl, Counters())
 
     finalizer(nlp, amplmodel_finalize)
     return nlp
@@ -122,7 +122,7 @@ function reset!(nlp :: AmplModel)
 end
 
 "Write message `msg` along with primal and dual variables `x` and `y` to file."
-function write_sol(nlp :: AmplModel, msg :: ASCIIString, x :: Array{Float64,1}, y :: Array{Float64,1})
+function write_sol(nlp :: AmplModel, msg :: String, x :: Array{Float64,1}, y :: Array{Float64,1})
   @check_ampl_model
   length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
   length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
@@ -144,12 +144,12 @@ end
 
 function show(io :: IO, nlp :: AmplModel)
   @check_ampl_model
-  show(io, nlp.meta);
+  show(io, nlp.meta)
 end
 
 function print(io :: IO, nlp :: AmplModel)
   @check_ampl_model
-  print(io, nlp.meta);
+  print(io, nlp.meta)
 end
 
 
@@ -170,7 +170,7 @@ end
 """
 function lagscale(nlp :: AmplModel, σ :: Float64)
   @check_ampl_model
-  err = Cint[0];
+  err = Cint[0]
   @asl_call(:asl_lagscale, Void, (Ptr{Void}, Float64, Ptr{Cint}), nlp.__asl, σ, err)
   err[1] == 0 || throw(AmplException("Error while scaling Lagrangian"))
 end
@@ -180,7 +180,7 @@ function conscale(nlp :: AmplModel, s :: Array{Float64,1})
   @check_ampl_model
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
-  err = Cint[0];
+  err = Cint[0]
   @asl_call(:asl_conscale, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Cint}), nlp.__asl, s, err)
   err[1] == 0 || throw(AmplException("Error while scaling constraints"))
 end
@@ -317,7 +317,7 @@ end
 "Evaluate the constraints Jacobian at `x` as a sparse matrix."
 function jac(nlp :: AmplModel, x :: Array{Float64,1})
   @check_ampl_model
-  (rows, cols, vals) = jac_coord(nlp, x);
+  (rows, cols, vals) = jac_coord(nlp, x)
   return sparse(rows, cols, vals, nlp.meta.ncon, nlp.meta.nvar)
 end
 
