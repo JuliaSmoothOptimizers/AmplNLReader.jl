@@ -4,6 +4,7 @@ module AmplNLReader
 
 using NLPModels
 using Compat
+import Compat.String
 
 if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
   include("../deps/deps.jl")
