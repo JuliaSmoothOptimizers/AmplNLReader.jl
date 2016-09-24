@@ -1,7 +1,6 @@
 using Ipopt
 using MathProgBase
-# Explicitly use AMPLMathProgInterface to err if it's not installed
-using AMPLMathProgInterface
+using NLPModels
 
 # pass an AmplModel to IPOPT
 path = dirname(@__FILE__)

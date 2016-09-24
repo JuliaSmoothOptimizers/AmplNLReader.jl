@@ -13,9 +13,6 @@ for problem in problems
   nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"), safe=true)
   nlp_mpb = MathProgNLPModel(problem_f())
   nlps = [nlp_ampl, nlp_mpb]
-  nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"))
-  nlp_jump = MathProgNLPModel(problem_f())
-  nlps = [nlp_ampl, nlp_jump]
 
   @printf("Checking problem %-15s%12s\t", problem_s, "")
   consistent_nlps(nlps)
