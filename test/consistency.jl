@@ -11,7 +11,7 @@ for problem in problems
 
   problem_f = eval(problem)
   nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"))
-  nlp_jump = JuMPNLPModel(problem_f())
+  nlp_jump = MathProgNLPModel(problem_f())
   nlps = [nlp_ampl, nlp_jump]
 
   @printf("Checking problem %-15s%12s\t", problem_s, "")
