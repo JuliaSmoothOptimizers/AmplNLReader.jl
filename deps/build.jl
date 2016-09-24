@@ -1,33 +1,36 @@
 using BinDeps
+using Compat
 
 @BinDeps.setup
 
-libasl = library_dependency("libasl", aliases=["libasl.2", "libasl.2.0.3"])
-libmp = library_dependency("libmp", aliases=["libmp.2", "libmp.2.0.3"])
+libasl = library_dependency("libasl", aliases=["libasl.3", "libasl.3.1.0"])
+libmp = library_dependency("libmp", aliases=["libmp.3", "libmp.3.1.0"])
 
-# Uncomment when the ASL makes it into Homebrew.jl.
+# Hopeless.
 # @osx_only begin
 #   using Homebrew
-#   provides(Homebrew.HB, "asl", [libasl, libmp], os = :Darwin)
+#   provides(Homebrew.HB, "homebrew/science/asl", [libasl, libmp], os = :Darwin)
+#   push!(Libdl.DL_LOAD_PATH, joinpath(Homebrew.prefix("asl"), "lib"))
 # end
 
 # Uncomment when there is a deb for the ASL.
 # provides(AptGet, "libasl-dev", [libasl, libmp], os = :Linux)
 
+# Outdated!
 @windows_only begin
   using WinRPM
   provides(WinRPM.RPM, "ampl-mp", [libasl, libmp], os = :Windows)
 end
 
 provides(Sources,
-         URI("https://github.com/ampl/mp/archive/2.0.3.tar.gz"),
+         URI("https://github.com/ampl/mp/archive/3.1.0.tar.gz"),
          [libasl, libmp],
-         SHA="4ae38da883cfdf077d57c488b03756d9068b1d5b8552db983f6690246edc71a8",
-         unpacked_dir="mp-2.0.3")
+         SHA="587c1a88f4c8f57bef95b58a8586956145417c8039f59b1758365ccc5a309ae9",
+         unpacked_dir="mp-3.1.0")
 
 depsdir = BinDeps.depsdir(libasl)
 prefix = joinpath(depsdir, "usr")
-srcdir = joinpath(depsdir, "src", "mp-2.0.3")
+srcdir = joinpath(depsdir, "src", "mp-3.1.0")
 
 provides(SimpleBuild,
          (@build_steps begin
@@ -35,10 +38,6 @@ provides(SimpleBuild,
             (@build_steps begin
                ChangeDirectory(srcdir)
                (@build_steps begin
-                  `wget https://gist.githubusercontent.com/dpo/dde4bf8030209fcf0569/raw/ed93e2653b51b5da754aabc89e08704421860009/a.diff`
-                  `patch -p1 -i a.diff`
-                  `wget https://github.com/ampl/mp/commit/ffede9ec6b131a3a8f8a35de9ba5bf4c648527b5.diff`
-                  `patch -p1 -i ffede9ec6b131a3a8f8a35de9ba5bf4c648527b5.diff`
                   `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True`
                   `make all`
                   `make test`
@@ -47,4 +46,4 @@ provides(SimpleBuild,
              end)
           end), [libasl, libmp], os = :Unix)
 
-@BinDeps.install [:libasl => :libasl]
+@BinDeps.install @compat Dict(:libasl => :libasl)
