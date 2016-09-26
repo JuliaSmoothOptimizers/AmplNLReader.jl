@@ -10,7 +10,7 @@ for problem in problems
   include(joinpath(nlppath, "$problem_s.jl"))
 
   problem_f = eval(problem)
-  nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"))
+  nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"), safe=true)
   nlp_mpb = MathProgNLPModel(problem_f())
   nlps = [nlp_ampl, nlp_mpb]
 
