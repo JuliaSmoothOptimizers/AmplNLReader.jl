@@ -422,7 +422,6 @@ function jth_hprod!(nlp :: AmplModel,
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
              nlp.__asl, v,            hv,           j-1);
   nlp.counters.neval_jhprod += 1
-  j > 0 && (hv *= -1)  # lagscale() flipped the sign of each constraint.
   return hv
 end
 
@@ -451,7 +450,6 @@ function ghjvprod!(nlp :: AmplModel,
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
              nlp.__asl, g,            v,            gHv);
   nlp.counters.neval_hprod += nlp.meta.ncon
-  gHv *= -1  # lagscale() flipped the sign of each constraint.
 end
 
 """Evaluate the Lagrangian Hessian at `(x,y)` in sparse coordinate format.
