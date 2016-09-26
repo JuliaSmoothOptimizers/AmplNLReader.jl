@@ -10,9 +10,9 @@ for problem in problems
   include(joinpath(nlppath, "$problem_s.jl"))
 
   problem_f = eval(problem)
-  nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"))
-  nlp_jump = JuMPNLPModel(problem_f())
-  nlps = [nlp_ampl, nlp_jump]
+  nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"), safe=true)
+  nlp_mpb = MathProgNLPModel(problem_f())
+  nlps = [nlp_ampl, nlp_mpb]
 
   @printf("Checking problem %-15s%12s\t", problem_s, "")
   consistent_nlps(nlps)

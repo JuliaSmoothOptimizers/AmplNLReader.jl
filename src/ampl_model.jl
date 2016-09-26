@@ -27,8 +27,9 @@ type AmplModel <: AbstractNLPModel
   __asl :: Ptr{Void};        # Pointer to internal ASL structure. Do not touch.
 
   counters :: Counters       # Evaluation counters
+  safe :: Bool               # Always evaluate the objective before the Hessian.
 
-  function AmplModel(stub :: AbstractString)
+  function AmplModel(stub :: AbstractString; safe :: Bool=false)
     asl = @compat @asl_call(:asl_init, Ptr{Void}, (Ptr{UInt8},), stub);
     asl == C_NULL && error("Error allocating ASL structure")
 
@@ -90,7 +91,7 @@ type AmplModel <: AbstractNLPModel
                         nlin=nlin, nnln=nnln, nnet=nnet, nlnet=nlnet,
                         minimize=minimize, islp=islp, name=stub)
 
-    nlp = new(meta, asl, Counters())
+    nlp = new(meta, asl, Counters(), safe)
 
     finalizer(nlp, amplmodel_finalize)
     return nlp
@@ -384,12 +385,16 @@ function hprod!(nlp :: AmplModel,
                 hv :: Array{Float64,1};
                 y :: Array{Float64,1} = nlp.meta.y0,
                 obj_weight :: Float64 = 1.0)
-  # Note: x is in fact not used.
+  # Note: x is in fact not used in hprod.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
   length(y) >= nlp.meta.ncon || error("y must have length at least $(nlp.meta.ncon)")
   length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
 
+  if nlp.safe
+    _ = obj(nlp, x) ; nlp.counters.neval_obj -= 1
+    _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
+  end
   @asl_call(:asl_hprod, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
              nlp.__asl, y,            v,            hv,           obj_weight);
@@ -412,17 +417,23 @@ The objective Hessian is used if `j=0`.
 function jth_hprod!(nlp :: AmplModel,
                     x :: Array{Float64,1}, v :: Array{Float64,1},
                     j :: Int, hv :: Array{Float64,1})
-  # Note: x is in fact not used.
+  # Note: x is in fact not used in hprod.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
   length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
 
+  if nlp.safe
+    if j == 0
+      _ = obj(nlp, x) ; nlp.counters.neval_obj -= 1
+    else
+      _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
+    end
+  end
   @asl_call(:asl_hvcompd, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int),
              nlp.__asl, v,            hv,           j-1);
   nlp.counters.neval_jhprod += 1
-  j > 0 && (hv *= -1)  # lagscale() flipped the sign of each constraint.
   return hv
 end
 
@@ -447,11 +458,13 @@ function ghjvprod!(nlp :: AmplModel,
   length(g) >= nlp.meta.nvar || error("g must have length at least $(nlp.meta.nvar)")
   length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
 
+  if nlp.safe
+    _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
+  end
   @asl_call(:asl_ghjvprod, Ptr{Float64},
             (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
              nlp.__asl, g,            v,            gHv);
   nlp.counters.neval_hprod += nlp.meta.ncon
-  gHv *= -1  # lagscale() flipped the sign of each constraint.
 end
 
 """Evaluate the Lagrangian Hessian at `(x,y)` in sparse coordinate format.
@@ -465,6 +478,11 @@ function hess_coord(nlp :: AmplModel,
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
   length(y) >= nlp.meta.ncon || error("y must have length at least $(nlp.meta.ncon)")
+
+  if nlp.safe
+    _ = obj(nlp, x) ; nlp.counters.neval_obj -= 1
+    _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
+  end
 
   rows = Array(Int64, nlp.meta.nnzh)
   cols = Array(Int64, nlp.meta.nnzh)
