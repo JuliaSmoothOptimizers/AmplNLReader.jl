@@ -1,19 +1,26 @@
 language: julia
-os:
-  - osx
-  - linux
-julia:
-  - 0.4
-  - release
-  - nightly
+# Homebrew no longer bottles for OSX 10.9; request 10.11
+matrix:
+  include:
+    - os: linux
+      julia: 0.4
+    - os: linux
+      julia: release
+    - os: linux
+      julia: nightly
+    - os: osx
+      julia: 0.4
+      osx_image: xcode7.3
+    - os: osx
+      julia: release
+      osx_image: xcode7.3
+    - os: osx
+      julia: nightly
+      osx_image: xcode7.3
 addons:
   apt_packages:
     - gfortran
 script:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-    wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.2-Darwin-x86_64.tar.gz;
-    tar -xzf cmake-3.3.2-Darwin-x86_64.tar.gz;
-    export PATH=`pwd`/cmake-3.3.2-Darwin-x86_64/CMake.app/Contents/bin:$PATH; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
     wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.tar.gz;
     tar -xzf cmake-3.3.2-Linux-x86_64.tar.gz;
