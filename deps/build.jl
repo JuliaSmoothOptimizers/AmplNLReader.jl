@@ -25,19 +25,21 @@ provides(Sources,
 depsdir = BinDeps.depsdir(libasl)
 prefix = joinpath(depsdir, "usr")
 srcdir = joinpath(depsdir, "src", "mp-3.1.0")
+builddir = joinpath(srcdir, "build")
 
 provides(SimpleBuild,
          (@build_steps begin
             GetSources(libasl)
+            CreateDirectory(builddir)
             (@build_steps begin
-               ChangeDirectory(srcdir)
-               (@build_steps begin
-                  `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True`
-                  `make all`
-                  `make test`
-                  `make install`
-                end)
-             end)
           end), [libasl, libmp], os = :Unix)
+              ChangeDirectory(builddir)
+              (@build_steps begin
+                `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True ..`
+                `make all`
+                `make test`
+                `make install`
+              end)
+            end)
 
 @BinDeps.install @compat Dict(:libasl => :libasl)
