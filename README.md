@@ -9,11 +9,13 @@
 At the Julia prompt, clone this repository and build:
 
 ````JULIA
+julia> Pkg.clone("https://github.com/JuliaSmoothOptimizers/NLPModels.jl.git")
 julia> Pkg.clone("https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl.git")
 julia> Pkg.build("AmplNLReader")
 ````
 
-This will automatically use BinDeps to download and install the AMPL interface library.
+Currently, OSX and Linux are supported.
+Windows support is on hold until the [AMPL/MP library](https://github.com/ampl/mp) can build shared libraries.
 
 ## Testing
 
@@ -59,52 +61,24 @@ y0 = 1x2 Array{Float64,2}:
  -0.0  -0.0
 ````
 
-There is preliminary support for holding multiple models in memory simultaneously. This should be transparent to the user.
+There is support for holding multiple models in memory simultaneously. This should be transparent to the user.
 
 ## Optimization Problems
 
-`AmplNLReader.jl` currently focuses on continuous problems written in the form
+`AmplNLReader.jl` currently focuses on continuous problems conforming to [`NLPModels.jl`](https://github.com/JuliaSmoothOptimizers/NLPModels.jl).
 
-    optimize f(x)  subject to l ≤ x ≤ u,  L ≤ c(x) ≤ U,
-
-where `f` is the objective function, `c` is the (vector-valued) constraint function, `l` and `u` are vectors of lower and upper bounds on the variables, and `L` and `U` are vectors of lower and upper bounds on the general constraints.
-
-## Attributes
-
-`AmplModel` objects have the following attributes:
-
-Attribute   | Type               | Notes
-------------|--------------------|------------------------------------
-`meta`      | `NLPModelMeta`     | See [NLP.jl](https://github.com/optimizers/NLP.jl)
-`__asl`     | `Ptr{Void}`        | A private pointer to the internal ASL data structure
-
-## Methods
-
-The following table lists the methods associated to an `AmplModel`. See [Hooking your Solver to AMPL](http://ampl.com/REFS/hooking2.pdf) for background.
+`AmplModel` objects support all methods associated to `NLPModel` objects.
+Please see the [`NLPModels.jl` documentation](https://juliasmoothoptimizers.github.io/NLPModels.jl/latest) for more information.
+The following table lists extra methods associated to an `AmplModel`.
+See [Hooking your Solver to AMPL](http://ampl.com/REFS/hooking2.pdf) for background.
 
 Method                          | Notes
 --------------------------------|--------------------------------
-`varscale(nlp, s)`              | Scale the vector of variables by the vector `s`
-`obj(nlp, x)`                   | Evaluate the objective function at `x`
-`grad(nlp, x)`                  | Evaluate the objective function gradient at `x`
-`lagscale(nlp, s)`              | Set the scaling factor in the Lagrangian
-`conscale(nlp, s)`              | Scale the vector of constraints by the vector `s`
-`cons(nlp, x)`                  | Evaluate the vector of constraints at `x`
-`jth_con(nlp, x, j)`            | Evaluate the `j`-th constraint at `x`
-`jth_congrad(nlp, x, j)`        | Evaluate the `j`-th constraint gradient at `x`
-`jth_sparse_congrad(nlp, x, j)` | Evaluate the `j`-th constraint sparse gradient at `x`
-`jac_coord(nlp, x)`             | Evaluate the sparse Jacobian of the constraints at `x` in coordinate format
-`jac(nlp, x)`                   | Evaluate the sparse Jacobian of the constraints at `x`
-`hprod(nlp, x, v, y=y0, w=1)`   | Evaluate the product of the Hessian of the Lagrangian at (`x`,`y`) with `v` using the objective weight `w`
-`jth_hprod(nlp, x, v, j)`       | Compute the product of the Hessian of the `j`-th constraint at `x` with `v`
-`ghjvprod(nlp, x, g, v)`        | Compute the vector of dot products (`g`, `Hj*v`)
-`hess_coord(nlp, x, y=y0, w=1.)`| Evaluate the sparse Hessian of the Lagrangian at (`x`,`y`) using the objective weight `w` in coordinate format
-`hess(nlp, x, y=y0, w=1.)`      | Evaluate the sparse Hessian of the Lagrangian at (`x`,`y`) using the objective weight `w`
 `write_sol(nlp, msg, x, y)`     | Write primal and dual solutions to file
 
 ## Missing Methods
 
-* methods for LPs (sparse cost, sparse contraint matrix)
+* methods for LPs (sparse cost, sparse constraint matrix)
 * methods to check optimality conditions.
 
 This content is released under the [MIT](http://opensource.org/licenses/MIT) License.
