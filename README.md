@@ -9,7 +9,6 @@
 At the Julia prompt, clone this repository and build:
 
 ````JULIA
-julia> Pkg.clone("https://github.com/JuliaSmoothOptimizers/NLPModels.jl.git")
 julia> Pkg.clone("https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl.git")
 julia> Pkg.build("AmplNLReader")
 ````
