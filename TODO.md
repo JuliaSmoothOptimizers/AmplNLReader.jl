@@ -1,5 +1,4 @@
 # Todo
 
-- [ ] Write meaningful tests
+- [X] Write meaningful tests
 - [ ] Support problems with multiple objectives.
-
