@@ -9,8 +9,9 @@ export AmplModel, AmplException,
 
 # Convenience macro.
 macro asl_call(func, args...)
+  args = map(esc,args)
   quote
-    ccall(($func, libasl), $(args...))
+    ccall(($(esc(func)), libasl), $(args...))
   end
 end
 
@@ -19,7 +20,7 @@ type AmplException
 end
 
 macro check_ampl_model()
-  :(nlp.__asl == C_NULL && throw(AmplException("Uninitialized AMPL model")))
+  esc(:(nlp.__asl == C_NULL && throw(AmplException("Uninitialized AMPL model"))))
 end
 
 type AmplModel <: AbstractNLPModel
