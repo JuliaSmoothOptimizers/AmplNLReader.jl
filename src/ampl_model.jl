@@ -203,7 +203,7 @@ end
 
 "Evaluate the gradient of the objective function at `x`."
 function grad(nlp :: AmplModel, x :: Vector{Float64})
-  g = Array(Float64, nlp.meta.nvar)
+  g = Array{Float64}(nlp.meta.nvar)
   return grad!(nlp, x, g)
 end
 
@@ -223,7 +223,7 @@ end
 
 "Evaluate the constraints at `x`."
 function cons(nlp :: AmplModel, x :: Vector{Float64})
-  c = Array(Float64, nlp.meta.ncon)
+  c = Array{Float64}(nlp.meta.ncon)
   return cons!(nlp, x, c)
 end
 
@@ -258,7 +258,7 @@ end
 
 "Evaluate the `j`-th constraint gradient at `x`."
 function jth_congrad(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
-  g = Array(Float64, nlp.meta.nvar)
+  g = Array{Float64}(nlp.meta.nvar)
   return jth_congrad!(nlp, x, j, g)
 end
 
@@ -287,8 +287,8 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
                   (Ptr{Void}, Cint), nlp.__asl, j-1)
 
   err = Cint[0]
-  inds = Array(Int64, nnz)
-  vals = Array(Float64, nnz)
+  inds = Array{Int64}(nnz)
+  vals = Array{Float64}(nnz)
   @asl_call(:asl_sparse_congrad, Void,
             (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}, Ptr{Cint}),
              nlp.__asl, x,            j-1,   inds,       vals,         err)
@@ -304,9 +304,9 @@ function jac_coord(nlp :: AmplModel, x :: Vector{Float64})
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Cint[0]
-  rows = Array(Int64, nlp.meta.nnzj)
-  cols = Array(Int64, nlp.meta.nnzj)
-  vals = Array(Float64, nlp.meta.nnzj)
+  rows = Array{Int64}(nlp.meta.nnzj)
+  cols = Array{Int64}(nlp.meta.nnzj)
+  vals = Array{Float64}(nlp.meta.nnzj)
   @asl_call(:asl_jac, Void,
             (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}, Ptr{Cint}),
              nlp.__asl, x,            rows,       cols,       vals,         err)
@@ -375,7 +375,7 @@ function hprod(nlp :: AmplModel,
                v :: Vector{Float64};
                y :: Vector{Float64} = nlp.meta.y0,
                obj_weight :: Float64 = 1.0)
-  hv = Array(Float64, nlp.meta.nvar);
+  hv = Array{Float64}(nlp.meta.nvar);
   return hprod!(nlp, x, v, hv, y=y, obj_weight=obj_weight)
 end
 
@@ -408,7 +408,7 @@ The objective Hessian is used if `j=0`.
 """
 function jth_hprod(nlp :: AmplModel,
                    x :: Vector{Float64}, v :: Vector{Float64}, j :: Int)
-  hv = Array(Float64, nlp.meta.nvar)
+  hv = Array{Float64}(nlp.meta.nvar)
   return jth_hprod!(nlp, x, v, j, hv)
 end
 
@@ -443,7 +443,7 @@ where `Hj` is the Hessian of the `j`-th constraint at `x`.
 """
 function ghjvprod(nlp :: AmplModel,
                   x :: Vector{Float64}, g :: Vector{Float64}, v :: Vector{Float64})
-  gHv = Array(Float64, nlp.meta.ncon);
+  gHv = Array{Float64}(nlp.meta.ncon);
   return ghjvprod!(nlp, x, g, v, gHv)
 end
 
@@ -485,9 +485,9 @@ function hess_coord(nlp :: AmplModel,
     _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
   end
 
-  rows = Array(Int64, nlp.meta.nnzh)
-  cols = Array(Int64, nlp.meta.nnzh)
-  vals = Array(Float64, nlp.meta.nnzh)
+  rows = Array{Int64}(nlp.meta.nnzh)
+  cols = Array{Int64}(nlp.meta.nnzh)
+  vals = Array{Float64}(nlp.meta.nnzh)
   @asl_call(:asl_hess, Void,
             (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
              nlp.__asl, y,            obj_weight, rows,       cols,       vals)
