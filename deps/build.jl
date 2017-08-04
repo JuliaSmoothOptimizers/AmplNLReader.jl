@@ -9,9 +9,10 @@ libasl = library_dependency("libasl", aliases=["libasl.3", "libasl.3.1.0"])
   using Homebrew
   provides(Homebrew.HB, "homebrew/science/ampl-mp", libasl, os = :Darwin)
 end
-
-# Uncomment when there is a deb for the ASL.
-# provides(AptGet, "libasl-dev", libasl, os = :Linux)
+@static if is_linux()
+  using Linuxbrew
+  provides(Linuxbrew.LB, "homebrew/science/ampl-mp", libasl, os = :Linux)
+end
 
 provides(Sources,
          URI("https://github.com/ampl/mp/archive/3.1.0.tar.gz"),
