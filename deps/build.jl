@@ -7,7 +7,7 @@ libasl = library_dependency("libasl", aliases=["libasl.3", "libasl.3.1.0"])
 
 @static if is_apple()
   using Homebrew
-  provides(Homebrew.HB, "homebrew/science/ampl-mp", libasl, os = :Darwin)
+  provides(Homebrew.HB, "ampl-mp", libasl, os = :Darwin)
 end
 
 # Uncomment when there is a deb for the ASL.
