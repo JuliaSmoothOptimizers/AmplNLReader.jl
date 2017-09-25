@@ -9,12 +9,14 @@
 At the Julia prompt, clone this repository and build:
 
 ````JULIA
-julia> Pkg.clone("https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl.git")
+julia> Pkg.add("AmplNLReader")
 julia> Pkg.build("AmplNLReader")
 ````
 
 Currently, OSX and Linux are supported.
 Windows support is on hold until the [AMPL/MP library](https://github.com/ampl/mp) can build shared libraries.
+See https://github.com/ampl/mp/issues/107 for background information.
+Any help from Windows developers would be welcome!
 
 ## Testing
 
