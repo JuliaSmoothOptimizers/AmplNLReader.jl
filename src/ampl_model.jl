@@ -15,7 +15,7 @@ macro asl_call(func, args...)
   end
 end
 
-type AmplException
+mutable struct AmplException
   msg :: String
 end
 
@@ -23,7 +23,7 @@ macro check_ampl_model()
   esc(:(nlp.__asl == C_NULL && throw(AmplException("Uninitialized AMPL model"))))
 end
 
-type AmplModel <: AbstractNLPModel
+mutable struct AmplModel <: AbstractNLPModel
   meta  :: NLPModelMeta;     # Problem metadata.
   __asl :: Ptr{Void};        # Pointer to internal ASL structure. Do not touch.
 
@@ -31,46 +31,46 @@ type AmplModel <: AbstractNLPModel
   safe :: Bool               # Always evaluate the objective before the Hessian.
 
   function AmplModel(stub :: AbstractString; safe :: Bool=false)
-    asl = @compat @asl_call(:asl_init, Ptr{Void}, (Ptr{UInt8},), stub);
+    asl = @asl_call(:asl_init, Ptr{Void}, (Ptr{UInt8},), stub);
     asl == C_NULL && error("Error allocating ASL structure")
 
     minimize = @asl_call(:asl_objtype, Int32, (Ptr{Void},), asl) == 0;
     islp = @asl_call(:asl_islp, Int32, (Ptr{Void},), asl) != 0;
 
-    nlo = @compat Int(@asl_call(:asl_nlo, Int32, (Ptr{Void},), asl));
+    nlo = Int(@asl_call(:asl_nlo, Int32, (Ptr{Void},), asl));
 
-    nvar = @compat Int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
-    ncon = @compat Int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
+    nvar = Int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
+    ncon = Int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
 
-    x0   = @compat unsafe_wrap(Array, @asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
+    x0   = unsafe_wrap(Array, @asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false)
-    y0   = @compat unsafe_wrap(Array, @asl_call(:asl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
+    y0   = unsafe_wrap(Array, @asl_call(:asl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false)
 
-    lvar = @compat unsafe_wrap(Array, @asl_call(:asl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
+    lvar = unsafe_wrap(Array, @asl_call(:asl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false)
-    uvar = @compat unsafe_wrap(Array, @asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
+    uvar = unsafe_wrap(Array, @asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false)
 
-    nzo = @compat Int(@asl_call(:asl_nzo, Int32, (Ptr{Void},), asl))
-    nbv = @compat Int(@asl_call(:asl_nbv, Int32, (Ptr{Void},), asl))
-    niv = @compat Int(@asl_call(:asl_niv, Int32, (Ptr{Void},), asl))
-    nlvb = @compat Int(@asl_call(:asl_nlvb, Int32, (Ptr{Void},), asl))
-    nlvo = @compat Int(@asl_call(:asl_nlvo, Int32, (Ptr{Void},), asl))
-    nlvc = @compat Int(@asl_call(:asl_nlvc, Int32, (Ptr{Void},), asl))
-    nlvbi = @compat Int(@asl_call(:asl_nlvbi, Int32, (Ptr{Void},), asl))
-    nlvci = @compat Int(@asl_call(:asl_nlvci, Int32, (Ptr{Void},), asl))
-    nlvoi = @compat Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Void},), asl))
-    nwv = @compat Int(@asl_call(:asl_nwv, Int32, (Ptr{Void},), asl))
+    nzo = Int(@asl_call(:asl_nzo, Int32, (Ptr{Void},), asl))
+    nbv = Int(@asl_call(:asl_nbv, Int32, (Ptr{Void},), asl))
+    niv = Int(@asl_call(:asl_niv, Int32, (Ptr{Void},), asl))
+    nlvb = Int(@asl_call(:asl_nlvb, Int32, (Ptr{Void},), asl))
+    nlvo = Int(@asl_call(:asl_nlvo, Int32, (Ptr{Void},), asl))
+    nlvc = Int(@asl_call(:asl_nlvc, Int32, (Ptr{Void},), asl))
+    nlvbi = Int(@asl_call(:asl_nlvbi, Int32, (Ptr{Void},), asl))
+    nlvci = Int(@asl_call(:asl_nlvci, Int32, (Ptr{Void},), asl))
+    nlvoi = Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Void},), asl))
+    nwv = Int(@asl_call(:asl_nwv, Int32, (Ptr{Void},), asl))
 
-    lcon = @compat unsafe_wrap(Array, @asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
+    lcon = unsafe_wrap(Array, @asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false)
-    ucon = @compat unsafe_wrap(Array, @asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
+    ucon = unsafe_wrap(Array, @asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false)
 
-    nlnet = @compat Int(@asl_call(:asl_lnc, Int32, (Ptr{Void},), asl))
-    nnnet = @compat Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl))
-    nnln = @compat(Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl))) - nnnet
+    nlnet = Int(@asl_call(:asl_lnc, Int32, (Ptr{Void},), asl))
+    nnnet = Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl))
+    nnln = Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl)) - nnnet
     nlin = ncon - nnln - nnnet
 
     nln  = 1 : nnln
@@ -78,8 +78,8 @@ type AmplModel <: AbstractNLPModel
     lnet = nnln+nnnet+1 : nnln+nnnet+nlnet
     lin  = nnln+nnnet+nlnet+1 : ncon
 
-    nnzj = @compat Int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl))
-    nnzh = @compat Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl))
+    nnzj = Int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl))
+    nnzh = Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl))
 
     meta = NLPModelMeta(nvar, x0=x0, lvar=lvar, uvar=uvar,
                         nlo=nlo, nnzo=nzo,
@@ -129,7 +129,7 @@ function write_sol(nlp :: AmplModel, msg :: String, x :: Vector{Float64}, y :: V
   length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
   length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
 
-  @compat @asl_call(:asl_write_sol, Void,
+  @asl_call(:asl_write_sol, Void,
                     (Ptr{Void}, Ptr{UInt8}, Ptr{Float64}, Ptr{Float64}),
                      nlp.__asl, msg,        x,            y)
 end
