@@ -39,4 +39,4 @@ provides(SimpleBuild,
             end)
           end), libasl, os = :Unix)
 
-@BinDeps.install @compat Dict(:libasl => :libasl)
+@BinDeps.install Dict(:libasl => :libasl)
