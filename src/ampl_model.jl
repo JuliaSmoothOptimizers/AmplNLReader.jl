@@ -15,7 +15,7 @@ macro asl_call(func, args...)
   end
 end
 
-mutable struct AmplException
+type AmplException
   msg :: String
 end
 
@@ -23,7 +23,7 @@ macro check_ampl_model()
   esc(:(nlp.__asl == C_NULL && throw(AmplException("Uninitialized AMPL model"))))
 end
 
-mutable struct AmplModel <: AbstractNLPModel
+type AmplModel <: AbstractNLPModel
   meta  :: NLPModelMeta;     # Problem metadata.
   __asl :: Ptr{Void};        # Pointer to internal ASL structure. Do not touch.
 
