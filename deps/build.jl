@@ -31,7 +31,7 @@ provides(SimpleBuild,
             (@build_steps begin
               ChangeDirectory(builddir)
               (@build_steps begin
-               `wget https://gist.githubusercontent.com/dpo/b18b25879201ed986086c7c359fdcf99/raw/ac9df3fc1ff0ad6bbbb597b9673a6f1a2acee48c/a.rb`
+               `wget https://gist.githubusercontent.com/dpo/b18b25879201ed986086c7c359fdcf99/raw/60f9973f0c461bed17b63c677c557d1e8f71f1e4/a.rb`
                 pipeline(`cat a.rb`, `patch --verbose -p1 -d ..`)
                 `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True ..`
                 `make all`
