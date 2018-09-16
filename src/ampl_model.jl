@@ -287,11 +287,11 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
                   (Ptr{Void}, Cint), nlp.__asl, j-1)
 
   err = Cint(0)
-  inds = Array{Int64}(nnz)
+  inds = Array{Cint}(nnz)
   vals = Array{Float64}(nnz)
   @asl_call(:asl_sparse_congrad, Void,
-            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}, Ref{Cint}),
-             nlp.__asl, x,            j-1,   inds,       vals,         err)
+            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Cint}, Ptr{Float64}, Ref{Cint}),
+             nlp.__asl, x,            j-1,   inds,      vals,         err)
   nlp.counters.neval_jgrad += 1
   err == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
   # Use 1-based indexing.
@@ -304,12 +304,12 @@ function jac_coord(nlp :: AmplModel, x :: Vector{Float64})
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Cint(0)
-  rows = Array{Int64}(nlp.meta.nnzj)
-  cols = Array{Int64}(nlp.meta.nnzj)
-  vals = Array{Float64}(nlp.meta.nnzj)
+  rows = Vector{Cint}(nlp.meta.nnzj)
+  cols = Vector{Cint}(nlp.meta.nnzj)
+  vals = Vector{Float64}(nlp.meta.nnzj)
   @asl_call(:asl_jac, Void,
-            (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}, Ref{Cint}),
-             nlp.__asl, x,            rows,       cols,       vals,         err)
+            (Ptr{Void}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Float64}, Ref{Cint}),
+             nlp.__asl, x,            rows,      cols,      vals,         err)
   nlp.counters.neval_jac += 1
   err == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
   # Use 1-based indexing.
@@ -485,12 +485,12 @@ function hess_coord(nlp :: AmplModel,
     _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
   end
 
-  rows = Array{Int64}(nlp.meta.nnzh)
-  cols = Array{Int64}(nlp.meta.nnzh)
+  rows = Array{Cint}(nlp.meta.nnzh)
+  cols = Array{Cint}(nlp.meta.nnzh)
   vals = Array{Float64}(nlp.meta.nnzh)
   @asl_call(:asl_hess, Void,
-            (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
-             nlp.__asl, y,            obj_weight, rows,       cols,       vals)
+            (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Cint}, Ptr{Cint}, Ptr{Float64}),
+             nlp.__asl, y,            obj_weight, rows,      cols,      vals)
   nlp.counters.neval_hess += 1
   # Use 1-based indexing.
   # Swap rows and cols to obtain the lower triangle.
