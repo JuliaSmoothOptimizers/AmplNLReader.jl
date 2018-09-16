@@ -31,46 +31,46 @@ type AmplModel <: AbstractNLPModel
   safe :: Bool               # Always evaluate the objective before the Hessian.
 
   function AmplModel(stub :: AbstractString; safe :: Bool=false)
-    asl = @compat @asl_call(:asl_init, Ptr{Void}, (Ptr{UInt8},), stub);
+    asl = @asl_call(:asl_init, Ptr{Void}, (Ptr{UInt8},), stub);
     asl == C_NULL && error("Error allocating ASL structure")
 
     minimize = @asl_call(:asl_objtype, Int32, (Ptr{Void},), asl) == 0;
     islp = @asl_call(:asl_islp, Int32, (Ptr{Void},), asl) != 0;
 
-    nlo = @compat Int(@asl_call(:asl_nlo, Int32, (Ptr{Void},), asl));
+    nlo = Int(@asl_call(:asl_nlo, Int32, (Ptr{Void},), asl));
 
-    nvar = @compat Int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
-    ncon = @compat Int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
+    nvar = Int(@asl_call(:asl_nvar, Int32, (Ptr{Void},), asl));
+    ncon = Int(@asl_call(:asl_ncon, Int32, (Ptr{Void},), asl));
 
-    x0   = @compat unsafe_wrap(Array, @asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
+    x0   = unsafe_wrap(Array, @asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false)
-    y0   = @compat unsafe_wrap(Array, @asl_call(:asl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
+    y0   = unsafe_wrap(Array, @asl_call(:asl_y0,   Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false)
 
-    lvar = @compat unsafe_wrap(Array, @asl_call(:asl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
+    lvar = unsafe_wrap(Array, @asl_call(:asl_lvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false)
-    uvar = @compat unsafe_wrap(Array, @asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
+    uvar = unsafe_wrap(Array, @asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Void},), asl),
                             (nvar,), false)
 
-    nzo = @compat Int(@asl_call(:asl_nzo, Int32, (Ptr{Void},), asl))
-    nbv = @compat Int(@asl_call(:asl_nbv, Int32, (Ptr{Void},), asl))
-    niv = @compat Int(@asl_call(:asl_niv, Int32, (Ptr{Void},), asl))
-    nlvb = @compat Int(@asl_call(:asl_nlvb, Int32, (Ptr{Void},), asl))
-    nlvo = @compat Int(@asl_call(:asl_nlvo, Int32, (Ptr{Void},), asl))
-    nlvc = @compat Int(@asl_call(:asl_nlvc, Int32, (Ptr{Void},), asl))
-    nlvbi = @compat Int(@asl_call(:asl_nlvbi, Int32, (Ptr{Void},), asl))
-    nlvci = @compat Int(@asl_call(:asl_nlvci, Int32, (Ptr{Void},), asl))
-    nlvoi = @compat Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Void},), asl))
-    nwv = @compat Int(@asl_call(:asl_nwv, Int32, (Ptr{Void},), asl))
+    nzo = Int(@asl_call(:asl_nzo, Int32, (Ptr{Void},), asl))
+    nbv = Int(@asl_call(:asl_nbv, Int32, (Ptr{Void},), asl))
+    niv = Int(@asl_call(:asl_niv, Int32, (Ptr{Void},), asl))
+    nlvb = Int(@asl_call(:asl_nlvb, Int32, (Ptr{Void},), asl))
+    nlvo = Int(@asl_call(:asl_nlvo, Int32, (Ptr{Void},), asl))
+    nlvc = Int(@asl_call(:asl_nlvc, Int32, (Ptr{Void},), asl))
+    nlvbi = Int(@asl_call(:asl_nlvbi, Int32, (Ptr{Void},), asl))
+    nlvci = Int(@asl_call(:asl_nlvci, Int32, (Ptr{Void},), asl))
+    nlvoi = Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Void},), asl))
+    nwv = Int(@asl_call(:asl_nwv, Int32, (Ptr{Void},), asl))
 
-    lcon = @compat unsafe_wrap(Array, @asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
+    lcon = unsafe_wrap(Array, @asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false)
-    ucon = @compat unsafe_wrap(Array, @asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
+    ucon = unsafe_wrap(Array, @asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Void},), asl),
                             (ncon,), false)
 
-    nlnet = @compat Int(@asl_call(:asl_lnc, Int32, (Ptr{Void},), asl))
-    nnnet = @compat Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl))
-    nnln = @compat(Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl))) - nnnet
+    nlnet = Int(@asl_call(:asl_lnc, Int32, (Ptr{Void},), asl))
+    nnnet = Int(@asl_call(:asl_nlnc, Int32, (Ptr{Void},), asl))
+    nnln = Int(@asl_call(:asl_nlc,  Int32, (Ptr{Void},), asl)) - nnnet
     nlin = ncon - nnln - nnnet
 
     nln  = 1 : nnln
@@ -78,8 +78,8 @@ type AmplModel <: AbstractNLPModel
     lnet = nnln+nnnet+1 : nnln+nnnet+nlnet
     lin  = nnln+nnnet+nlnet+1 : ncon
 
-    nnzj = @compat Int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl))
-    nnzh = @compat Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl))
+    nnzj = Int(@asl_call(:asl_nnzj, Int32, (Ptr{Void},), asl))
+    nnzh = Int(@asl_call(:asl_nnzh, Int32, (Ptr{Void},), asl))
 
     meta = NLPModelMeta(nvar, x0=x0, lvar=lvar, uvar=uvar,
                         nlo=nlo, nnzo=nzo,
@@ -129,7 +129,7 @@ function write_sol(nlp :: AmplModel, msg :: String, x :: Vector{Float64}, y :: V
   length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
   length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
 
-  @compat @asl_call(:asl_write_sol, Void,
+  @asl_call(:asl_write_sol, Void,
                     (Ptr{Void}, Ptr{UInt8}, Ptr{Float64}, Ptr{Float64}),
                      nlp.__asl, msg,        x,            y)
 end
@@ -162,9 +162,9 @@ function varscale(nlp :: AmplModel, s :: Vector{Float64})
   @check_ampl_model
   length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
 
-  err = Cint[0]
-  @asl_call(:asl_varscale, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Cint}), nlp.__asl, s, err)
-  err[1] == 0 || throw(AmplException("Error while scaling variables"))
+  err = Cint(0)
+  @asl_call(:asl_varscale, Void, (Ptr{Void}, Ptr{Float64}, Ref{Cint}), nlp.__asl, s, err)
+  err == 0 || throw(AmplException("Error while scaling variables"))
 end
 
 """Set the scaling factor σ in the Lagrangian:
@@ -172,9 +172,9 @@ end
 """
 function lagscale(nlp :: AmplModel, σ :: Float64)
   @check_ampl_model
-  err = Cint[0]
-  @asl_call(:asl_lagscale, Void, (Ptr{Void}, Float64, Ptr{Cint}), nlp.__asl, σ, err)
-  err[1] == 0 || throw(AmplException("Error while scaling Lagrangian"))
+  err = Cint(0)
+  @asl_call(:asl_lagscale, Void, (Ptr{Void}, Float64, Ref{Cint}), nlp.__asl, σ, err)
+  err == 0 || throw(AmplException("Error while scaling Lagrangian"))
 end
 
 "Scale the vector of constraints by the vector `s`."
@@ -182,9 +182,9 @@ function conscale(nlp :: AmplModel, s :: Vector{Float64})
   @check_ampl_model
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
-  err = Cint[0]
-  @asl_call(:asl_conscale, Void, (Ptr{Void}, Ptr{Float64}, Ptr{Cint}), nlp.__asl, s, err)
-  err[1] == 0 || throw(AmplException("Error while scaling constraints"))
+  err = Cint(0)
+  @asl_call(:asl_conscale, Void, (Ptr{Void}, Ptr{Float64}, Ref{Cint}), nlp.__asl, s, err)
+  err == 0 || throw(AmplException("Error while scaling constraints"))
 end
 
 # Evaluating objective, constraints and derivatives.
@@ -194,10 +194,10 @@ function obj(nlp :: AmplModel, x :: Vector{Float64})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint[0]
-  f = @asl_call(:asl_obj, Float64, (Ptr{Void}, Ptr{Float64}, Ptr{Cint}), nlp.__asl, x, err)
+  err = Cint(0)
+  f = @asl_call(:asl_obj, Float64, (Ptr{Void}, Ptr{Float64}, Ref{Cint}), nlp.__asl, x, err)
   nlp.counters.neval_obj += 1
-  err[1] == 0 || throw(AmplException("Error while evaluating objective"))
+  err == 0 || throw(AmplException("Error while evaluating objective"))
   return f
 end
 
@@ -212,12 +212,12 @@ function grad!(nlp :: AmplModel, x :: Vector{Float64}, g :: Vector{Float64})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint[0]
+  err = Cint(0)
   @asl_call(:asl_grad, Ptr{Float64},
-            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}),
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ref{Cint}),
              nlp.__asl, x,            g,            err)
   nlp.counters.neval_grad += 1
-  err[1] == 0 || throw(AmplException("Error while evaluating objective gradient"))
+  err == 0 || throw(AmplException("Error while evaluating objective gradient"))
   return g
 end
 
@@ -232,12 +232,12 @@ function cons!(nlp :: AmplModel, x :: Vector{Float64}, c :: Vector{Float64})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint[0]
+  err = Cint(0)
   @asl_call(:asl_cons, Void,
-            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}),
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Ref{Cint}),
              nlp.__asl, x,            c,            err)
   nlp.counters.neval_cons += 1
-  err[1] == 0 || throw(AmplException("Error while evaluating constraints"))
+  err == 0 || throw(AmplException("Error while evaluating constraints"))
   return c
 end
 
@@ -247,12 +247,12 @@ function jth_con(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint[0]
+  err = Cint(0)
   cj = @asl_call(:asl_jcon, Float64,
-                 (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Cint}),
+                 (Ptr{Void}, Ptr{Float64}, Int32, Ref{Cint}),
                   nlp.__asl, x,            j-1,   err)
   nlp.counters.neval_jcon += 1
-  err[1] == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
+  err == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
   return cj
 end
 
@@ -268,12 +268,12 @@ function jth_congrad!(nlp :: AmplModel, x :: Vector{Float64}, j :: Int, g :: Vec
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint[0]
+  err = Cint(0)
   @asl_call(:asl_jcongrad, Ptr{Float64},
-            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32, Ptr{Cint}),
+            (Ptr{Void}, Ptr{Float64}, Ptr{Float64}, Int32, Ref{Cint}),
              nlp.__asl, x,            g,            j-1,   err)
   nlp.counters.neval_jgrad += 1
-  err[1] == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
+  err == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
   return g
 end
 
@@ -286,14 +286,14 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
   nnz = @asl_call(:asl_sparse_congrad_nnz, Csize_t,
                   (Ptr{Void}, Cint), nlp.__asl, j-1)
 
-  err = Cint[0]
-  inds = Array{Int64}(nnz)
+  err = Cint(0)
+  inds = Array{Cint}(nnz)
   vals = Array{Float64}(nnz)
   @asl_call(:asl_sparse_congrad, Void,
-            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Int64}, Ptr{Float64}, Ptr{Cint}),
-             nlp.__asl, x,            j-1,   inds,       vals,         err)
+            (Ptr{Void}, Ptr{Float64}, Int32, Ptr{Cint}, Ptr{Float64}, Ref{Cint}),
+             nlp.__asl, x,            j-1,   inds,      vals,         err)
   nlp.counters.neval_jgrad += 1
-  err[1] == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
+  err == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
   # Use 1-based indexing.
   return sparsevec(inds+1, vals, nlp.meta.nvar)
 end
@@ -303,15 +303,15 @@ function jac_coord(nlp :: AmplModel, x :: Vector{Float64})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint[0]
-  rows = Array{Int64}(nlp.meta.nnzj)
-  cols = Array{Int64}(nlp.meta.nnzj)
-  vals = Array{Float64}(nlp.meta.nnzj)
+  err = Cint(0)
+  rows = Vector{Cint}(nlp.meta.nnzj)
+  cols = Vector{Cint}(nlp.meta.nnzj)
+  vals = Vector{Float64}(nlp.meta.nnzj)
   @asl_call(:asl_jac, Void,
-            (Ptr{Void}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}, Ptr{Cint}),
-             nlp.__asl, x,            rows,       cols,       vals,         err)
+            (Ptr{Void}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Float64}, Ref{Cint}),
+             nlp.__asl, x,            rows,      cols,      vals,         err)
   nlp.counters.neval_jac += 1
-  err[1] == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
+  err == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
   # Use 1-based indexing.
   return (rows+1, cols+1, vals)
 end
@@ -485,12 +485,12 @@ function hess_coord(nlp :: AmplModel,
     _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
   end
 
-  rows = Array{Int64}(nlp.meta.nnzh)
-  cols = Array{Int64}(nlp.meta.nnzh)
+  rows = Array{Cint}(nlp.meta.nnzh)
+  cols = Array{Cint}(nlp.meta.nnzh)
   vals = Array{Float64}(nlp.meta.nnzh)
   @asl_call(:asl_hess, Void,
-            (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Int64}, Ptr{Int64}, Ptr{Float64}),
-             nlp.__asl, y,            obj_weight, rows,       cols,       vals)
+            (Ptr{Void}, Ptr{Float64}, Float64,    Ptr{Cint}, Ptr{Cint}, Ptr{Float64}),
+             nlp.__asl, y,            obj_weight, rows,      cols,      vals)
   nlp.counters.neval_hess += 1
   # Use 1-based indexing.
   # Swap rows and cols to obtain the lower triangle.

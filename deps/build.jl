@@ -5,10 +5,10 @@ using Compat
 
 libasl = library_dependency("libasl", aliases=["libasl.3", "libasl.3.1.0"])
 
-@static if is_apple()
-  using Homebrew
-  provides(Homebrew.HB, "ampl-mp", libasl, os = :Darwin)
-end
+# @static if is_apple()
+#   using Homebrew
+#   provides(Homebrew.HB, "ampl-mp", libasl, os = :Darwin)
+# end
 
 # Uncomment when there is a deb for the ASL.
 # provides(AptGet, "libasl-dev", libasl, os = :Linux)
@@ -31,6 +31,8 @@ provides(SimpleBuild,
             (@build_steps begin
               ChangeDirectory(builddir)
               (@build_steps begin
+               `wget https://gist.githubusercontent.com/dpo/b18b25879201ed986086c7c359fdcf99/raw/60f9973f0c461bed17b63c677c557d1e8f71f1e4/a.rb`
+                pipeline(`cat a.rb`, `patch --verbose -p1 -d ..`)
                 `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True ..`
                 `make all`
                 `make test`
@@ -39,4 +41,4 @@ provides(SimpleBuild,
             end)
           end), libasl, os = :Unix)
 
-@BinDeps.install @compat Dict(:libasl => :libasl)
+@BinDeps.install Dict(:libasl => :libasl)
