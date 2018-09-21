@@ -1,9 +1,12 @@
-using Base.Test
+using Test
 using AmplNLReader
+using LinearAlgebra
+using Printf
+using SparseArrays
 
 function exercise_ampl_model(nlp :: AmplModel)
-  show(STDOUT, nlp)
-  print(STDOUT, nlp)
+  show(stdout, nlp)
+  print(stdout, nlp)
 
   # Perform dummy scaling.
   varscale(nlp, ones(nlp.meta.nvar))

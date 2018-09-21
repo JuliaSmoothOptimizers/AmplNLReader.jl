@@ -1,6 +1,6 @@
-using JuMP, NLPModels
+using NLPModels
 
-nlppath = joinpath(Pkg.dir("NLPModels"), "test")
+nlppath = joinpath(dirname(pathof(NLPModels)), "..", "test")
 include(joinpath(nlppath, "consistency.jl"))
 testpath = dirname(@__FILE__)
 
@@ -9,10 +9,9 @@ for problem in problems
   problem_s = string(problem)
   include(joinpath(nlppath, "$problem_s.jl"))
 
-  problem_f = eval(problem)
   nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"), safe=true)
-  nlp_mpb = MathProgNLPModel(problem_f())
-  nlps = [nlp_ampl, nlp_mpb]
+  nlp_autodiff = eval(parse("$(problem)_autodiff"))()
+  nlps = [nlp_ampl, nlp_autodiff]
 
   @printf("Checking problem %-15s%12s\t", problem_s, "")
   consistent_nlps(nlps)
