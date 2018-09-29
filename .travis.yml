@@ -11,6 +11,7 @@ julia:
 
 matrix:
   allow_failures:
+    - os: linux
     - julia: nightly
 
 addons:
