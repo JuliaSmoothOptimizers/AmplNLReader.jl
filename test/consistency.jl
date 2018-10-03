@@ -10,7 +10,7 @@ for problem in problems
   include(joinpath(nlppath, "$problem_s.jl"))
 
   nlp_ampl = AmplModel(joinpath(testpath, "$problem_s.nl"), safe=true)
-  nlp_autodiff = eval(parse("$(problem)_autodiff"))()
+  nlp_autodiff = eval(Meta.parse("$(problem)_autodiff"))()
   nlps = [nlp_ampl, nlp_autodiff]
 
   @printf("Checking problem %-15s%12s\t", problem_s, "")
