@@ -12,10 +12,11 @@ julia> Pkg.add("AmplNLReader")
 julia> Pkg.build("AmplNLReader")
 ````
 
-Currently, OSX and Linux are supported.
+Currently, only OSX is supported.
+Linux support is on hold until an issue with the [AMPL/MP library](https://github.com/ampl/mp) library is resolved.
 Windows support is on hold until the [AMPL/MP library](https://github.com/ampl/mp) can build shared libraries.
 See https://github.com/ampl/mp/issues/107 for background information.
-Any help from Windows developers would be welcome!
+Any help from Linux and Windows developers is welcome!
 
 ## Testing
 
