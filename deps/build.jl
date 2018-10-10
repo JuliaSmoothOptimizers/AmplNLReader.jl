@@ -3,42 +3,60 @@ using Compat
 
 @BinDeps.setup
 
-libasl = library_dependency("libasl", aliases=["libasl.3", "libasl.3.1.0"])
+libasl = library_dependency("libasl")
 
-# @static if is_apple()
-#   using Homebrew
-#   provides(Homebrew.HB, "ampl-mp", libasl, os = :Darwin)
-# end
+# General settings.
+so = "so"
+all_load = "--whole-archive"
+noall_load = "--no-whole-archive"
 
-# Uncomment when there is a deb for the ASL.
-# provides(AptGet, "libasl-dev", libasl, os = :Linux)
+@static if Sys.isapple()
+  so = "dylib"
+  all_load = "-all_load"
+  noall_load = "-noall_load"
+end
 
 provides(Sources,
-         URI("https://github.com/ampl/mp/archive/3.1.0.tar.gz"),
+         URI("http://netlib.org/ampl/solvers.tgz"),
          libasl,
-         SHA="587c1a88f4c8f57bef95b58a8586956145417c8039f59b1758365ccc5a309ae9",
-         unpacked_dir="mp-3.1.0")
+         SHA="f6b2c75a5a9761b8f6f891856a2f2c7a9edf8f0396948ba92cb78d22a3678d16",
+         unpacked_dir="solvers")
 
 depsdir = BinDeps.depsdir(libasl)
+rcdir = joinpath(depsdir, "rc")
 prefix = joinpath(depsdir, "usr")
-srcdir = joinpath(depsdir, "src", "mp-3.1.0")
-builddir = joinpath(srcdir, "build")
+libdir = joinpath(prefix, "lib")
+srcdir = joinpath(depsdir, "src", "solvers")
+aslinterface_src = joinpath(rcdir, "aslinterface.cc")
+makefile_mingw = joinpath(rcdir, "makefile.mingw")
 
 provides(SimpleBuild,
          (@build_steps begin
             GetSources(libasl)
-            CreateDirectory(builddir)
+            CreateDirectory(libdir)
             (@build_steps begin
-              ChangeDirectory(builddir)
+              ChangeDirectory(srcdir)
               (@build_steps begin
-               `wget https://gist.githubusercontent.com/dpo/b18b25879201ed986086c7c359fdcf99/raw/60f9973f0c461bed17b63c677c557d1e8f71f1e4/a.rb`
-                pipeline(`cat a.rb`, `patch --verbose -p1 -d ..`)
-                `cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_INSTALL_RPATH=$prefix/lib -DBUILD_SHARED_LIBS=True ..`
-                `make all`
-                `make test`
-                `make install`
+                `make -f makefile.u CC=gcc CFLAGS="-O -fPIC"`
+                `g++ -fPIC -shared -I$srcdir -I$rcdir $aslinterface_src -Wl,$all_load amplsolver.a -Wl,$noall_load -o libasl.$so`
+                `mv libasl.$so $libdir`
               end)
             end)
           end), libasl, os = :Unix)
+
+provides(SimpleBuild,
+         (@build_steps begin
+            GetSources(libasl)
+            CreateDirectory(libdir)
+            (@build_steps begin
+              ChangeDirectory(srcdir)
+              (@build_steps begin
+                `copy details.c0 details.c`
+                `mingw32-make -f makefile_mingw CC=gcc CFLAGS="-O -fPIC -DIEEE_8087 -DArith_Kind_ASL=1"`
+                `g++ -fPIC -shared -I$srcdir -I$rcdir $aslinterface_src -Wl,$all_load amplsolver.a -Wl,$noall_load -o libasl.$so`
+                `move libasl.$so $libdir`
+              end)
+            end)
+          end), libasl, os = :Windows)
 
 @BinDeps.install Dict(:libasl => :libasl)
