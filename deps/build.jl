@@ -34,7 +34,7 @@ libdir = joinpath(prefix, "lib")
 srcdir = joinpath(depsdir, "src", "solvers")
 aslinterface_src = joinpath(rcdir, "aslinterface.cc")
 makefile_mingw = joinpath(rcdir, "makefile.mingw")
-arith_mingw = joinpath(rcdir, "arith.h")
+arith_mingw = joinpath(rcdir, "arith$(Sys.WORD_SIZE).h")
 
 provides(SimpleBuild,
          (@build_steps begin
@@ -57,7 +57,7 @@ provides(SimpleBuild,
             (@build_steps begin
               ChangeDirectory(srcdir)
               (@build_steps begin
-                `cp $arith_mingw .`
+                `cp $arith_mingw arith.h`
                 `cp details.c0 details.c`
                 `mingw32-make -f $makefile_mingw CC=gcc CFLAGS="-O -fPIC"`
                 `g++ -fPIC -shared -I$srcdir -I$rcdir $aslinterface_src -Wl,$all_load amplsolver.a -Wl,$noall_load -o libasl.$so`
