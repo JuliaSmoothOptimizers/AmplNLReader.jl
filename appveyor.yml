@@ -1,0 +1,41 @@
+environment:
+  matrix:
+  - MINGW_DIR: mingw64
+    MINGW_URL: https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-win32/seh/x86_64-8.1.0-release-win32-seh-rt_v6-rev0.7z/download
+    MINGW_ARCHIVE: x86_64-8.1.0-release-win32-seh-rt_v6-rev0.7z
+    JULIA_URL: "https://julialang-s3.julialang.org/bin/winnt/x64/0.7/julia-0.7.0-win64.exe"
+  - MINGW_DIR: mingw32
+    MINGW_URL: https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/8.1.0/threads-win32/dwarf/i686-8.1.0-release-win32-dwarf-rt_v6-rev0.7z/download
+    MINGW_ARCHIVE: i686-8.1.0-release-win32-dwarf-rt_v6-rev0.7z
+    JULIA_URL: "https://julialang-s3.julialang.org/bin/winnt/x86/0.7/julia-0.7.0-win32.exe"
+
+notifications:
+  - provider: Email
+    on_build_success: false
+    on_build_failure: false
+    on_build_status_changed: false
+
+branches:
+  only:
+    - master
+
+skip_branch_with_pr: true
+
+install:
+  - if not exist "%MINGW_ARCHIVE%" appveyor DownloadFile "%MINGW_URL%" -FileName "%MINGW_ARCHIVE%"
+  - 7z x -y "%MINGW_ARCHIVE%" > nul
+  - ps: "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12"
+# Download most recent Julia Windows binary
+  - ps: (new-object net.webclient).DownloadFile($env:JULIA_URL, "C:\projects\julia-binary.exe")
+# Run installer silently, output to C:\projects\julia
+  - C:\projects\julia-binary.exe /S /D=C:\projects\julia
+
+build_script:
+  - set Path=%CD%\%MINGW_DIR%\bin;%Path%
+  - g++ --version
+  - mingw32-make --version
+  - IF EXIST .git\shallow (git fetch --unshallow)
+  - C:\projects\julia\bin\julia -e "using Pkg; Pkg.clone(pwd(), \"AmplNLReader\"); Pkg.build(\"AmplNLReader\");"
+
+test_script:
+  - C:\projects\julia\bin\julia -e "using Pkg; Pkg.test(\"AmplNLReader\")"

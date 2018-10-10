@@ -16,6 +16,11 @@ noall_load = "--no-whole-archive"
   noall_load = "-noall_load"
 end
 
+@static if Sys.iswindows()
+  so = "dll"
+  push!(BinDeps.defaults, BinDeps.BuildProcess)
+end
+
 provides(Sources,
          URI("http://netlib.org/ampl/solvers.tgz"),
          libasl,
@@ -29,6 +34,7 @@ libdir = joinpath(prefix, "lib")
 srcdir = joinpath(depsdir, "src", "solvers")
 aslinterface_src = joinpath(rcdir, "aslinterface.cc")
 makefile_mingw = joinpath(rcdir, "makefile.mingw")
+arith_mingw = joinpath(rcdir, "arith.h")
 
 provides(SimpleBuild,
          (@build_steps begin
@@ -51,10 +57,11 @@ provides(SimpleBuild,
             (@build_steps begin
               ChangeDirectory(srcdir)
               (@build_steps begin
-                `copy details.c0 details.c`
-                `mingw32-make -f makefile_mingw CC=gcc CFLAGS="-O -fPIC -DIEEE_8087 -DArith_Kind_ASL=1"`
+                `cp $arith_mingw .`
+                `cp details.c0 details.c`
+                `mingw32-make -f $makefile_mingw CC=gcc CFLAGS="-O -fPIC"`
                 `g++ -fPIC -shared -I$srcdir -I$rcdir $aslinterface_src -Wl,$all_load amplsolver.a -Wl,$noall_load -o libasl.$so`
-                `move libasl.$so $libdir`
+                `mv libasl.$so $libdir`
               end)
             end)
           end), libasl, os = :Windows)
