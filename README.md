@@ -1,6 +1,7 @@
 # AmplNLReader.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
 [![Master Build Status](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/master?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl/branch/master)
 [![Master Coverage Status](https://coveralls.io/repos/JuliaSmoothOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaSmoothOptimizers/AmplNLReader.jl?branch=master)
 
 ## How to Install
@@ -11,12 +12,6 @@ At the Julia prompt, clone this repository and build:
 julia> Pkg.add("AmplNLReader")
 julia> Pkg.build("AmplNLReader")
 ````
-
-Currently, only OSX is supported.
-Linux support is on hold until an issue with the [AMPL/MP library](https://github.com/ampl/mp) library is resolved.
-Windows support is on hold until the [AMPL/MP library](https://github.com/ampl/mp) can build shared libraries.
-See https://github.com/ampl/mp/issues/107 for background information.
-Any help from Linux and Windows developers is welcome!
 
 ## Testing
 
