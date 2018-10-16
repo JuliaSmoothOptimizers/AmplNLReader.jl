@@ -24,7 +24,7 @@ end
 provides(Sources,
          URI("http://netlib.org/ampl/solvers.tgz"),
          libasl,
-         SHA="f6b2c75a5a9761b8f6f891856a2f2c7a9edf8f0396948ba92cb78d22a3678d16",
+         SHA="16495404313c54c462c806a4b3e5c80805b23d36cabc12d7796d7a1b6be08c20",
          unpacked_dir="solvers")
 
 depsdir = BinDeps.depsdir(libasl)
