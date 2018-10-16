@@ -31,6 +31,16 @@ mutable struct AmplModel <: AbstractNLPModel
   safe :: Bool               # Always evaluate the objective before the Hessian.
 
   function AmplModel(stub :: AbstractString; safe :: Bool=false)
+
+    # check that stub or stub.nl exists
+    fname = basename(stub)
+    ext = occursin(".", fname) ? split(fname, '.')[2] : ""
+    if ext == "nl"
+      isfile(stub) || throw(AmplException("cannot find $(stub)"))
+    else
+      isfile("$(stub).nl") || throw(AmplException("cannot find $(stub).nl"))
+    end
+
     asl = @asl_call(:asl_init, Ptr{Nothing}, (Ptr{UInt8},), stub);
     asl == C_NULL && error("Error allocating ASL structure")
 
