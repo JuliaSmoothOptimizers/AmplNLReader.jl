@@ -113,7 +113,6 @@ import NLPModels.jprod, NLPModels.jtprod, NLPModels.jprod!, NLPModels.jtprod!
 import NLPModels.jth_hprod, NLPModels.jth_hprod!
 import NLPModels.ghjvprod, NLPModels.ghjvprod!
 import NLPModels.hess_coord, NLPModels.hess, NLPModels.hprod, NLPModels.hprod!
-import NLPModels.NLPtoMPB
 
 # Methods associated to AmplModel instances.
 
