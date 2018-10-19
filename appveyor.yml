@@ -57,7 +57,7 @@ build_script:
   - g++ --version
   - mingw32-make --version
   - IF EXIST .git\shallow (git fetch --unshallow)
-  - C:\projects\julia\bin\julia -e "using Pkg; Pkg.clone(pwd(), \"AmplNLReader\"); Pkg.build(\"AmplNLReader\");"
+  - C:\projects\julia\bin\julia -e "using Pkg; Pkg.clone(pwd(), \"AmplNLReader\"); Pkg.build(\"AmplNLReader\"); readlines(open(joinpath(\"deps\", \"build.log\")))"
 
 test_script:
   - C:\projects\julia\bin\julia -e "using Pkg; Pkg.test(\"AmplNLReader\")"
