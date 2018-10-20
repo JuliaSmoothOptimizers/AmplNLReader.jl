@@ -19,8 +19,6 @@
 extern "C" {
 #endif
 
-typedef struct ASL ASL;
-
 ASL *asl_init(const char *stub);
 void asl_finalize(ASL *asl);
 void asl_write_sol(ASL *asl, const char *msg, double *x, double *y);
