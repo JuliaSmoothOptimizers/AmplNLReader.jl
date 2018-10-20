@@ -3,6 +3,7 @@
 [![Master Build Status](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/master?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl/branch/master)
 [![Master Coverage Status](https://coveralls.io/repos/JuliaSmoothOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaSmoothOptimizers/AmplNLReader.jl?branch=master)
+[![codecov](https://codecov.io/gh/JuliaSmoothOptimizers/AmplNLReader.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaSmoothOptimizers/AmplNLReader.jl)
 
 ## How to Install
 
