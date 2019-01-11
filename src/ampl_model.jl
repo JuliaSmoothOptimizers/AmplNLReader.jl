@@ -133,7 +133,7 @@ function reset!(nlp :: AmplModel)
 end
 
 "Write message `msg` along with primal and dual variables `x` and `y` to file."
-function write_sol(nlp :: AmplModel, msg :: String, x :: Vector{Float64}, y :: Vector{Float64})
+function write_sol(nlp :: AmplModel, msg :: String, x :: AbstractVector, y :: AbstractVector)
   @check_ampl_model
   length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
   length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
@@ -167,7 +167,7 @@ end
 # Scaling AmplModel instances.
 
 "Scale the vector of variables by the vector `s`."
-function varscale(nlp :: AmplModel, s :: Vector{Float64})
+function varscale(nlp :: AmplModel, s :: AbstractVector)
   @check_ampl_model
   length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
 
@@ -187,7 +187,7 @@ function lagscale(nlp :: AmplModel, σ :: Float64)
 end
 
 "Scale the vector of constraints by the vector `s`."
-function conscale(nlp :: AmplModel, s :: Vector{Float64})
+function conscale(nlp :: AmplModel, s :: AbstractVector)
   @check_ampl_model
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
@@ -199,7 +199,7 @@ end
 # Evaluating objective, constraints and derivatives.
 
 "Evaluate the objective function of `nlp` at `x`."
-function obj(nlp :: AmplModel, x :: Vector{Float64})
+function obj(nlp :: AmplModel, x :: AbstractVector)
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -211,13 +211,13 @@ function obj(nlp :: AmplModel, x :: Vector{Float64})
 end
 
 "Evaluate the gradient of the objective function at `x`."
-function grad(nlp :: AmplModel, x :: Vector{Float64})
+function grad(nlp :: AmplModel, x :: AbstractVector)
   g = Vector{Float64}(undef, nlp.meta.nvar)
   return grad!(nlp, x, g)
 end
 
 "Evaluate the gradient of the objective function at `x` in place."
-function grad!(nlp :: AmplModel, x :: Vector{Float64}, g :: Vector{Float64})
+function grad!(nlp :: AmplModel, x :: AbstractVector, g :: AbstractVector)
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -231,13 +231,13 @@ function grad!(nlp :: AmplModel, x :: Vector{Float64}, g :: Vector{Float64})
 end
 
 "Evaluate the constraints at `x`."
-function cons(nlp :: AmplModel, x :: Vector{Float64})
+function cons(nlp :: AmplModel, x :: AbstractVector)
   c = Vector{Float64}(undef, nlp.meta.ncon)
   return cons!(nlp, x, c)
 end
 
 "Evaluate the constraints at `x` in place."
-function cons!(nlp :: AmplModel, x :: Vector{Float64}, c :: Vector{Float64})
+function cons!(nlp :: AmplModel, x :: AbstractVector, c :: AbstractVector)
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -251,7 +251,7 @@ function cons!(nlp :: AmplModel, x :: Vector{Float64}, c :: Vector{Float64})
 end
 
 "Evaluate the `j`-th constraint at `x`."
-function jth_con(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
+function jth_con(nlp :: AmplModel, x :: AbstractVector, j :: Int)
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -266,13 +266,13 @@ function jth_con(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
 end
 
 "Evaluate the `j`-th constraint gradient at `x`."
-function jth_congrad(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
+function jth_congrad(nlp :: AmplModel, x :: AbstractVector, j :: Int)
   g = Vector{Float64}(undef, nlp.meta.nvar)
   return jth_congrad!(nlp, x, j, g)
 end
 
 "Evaluate the `j`-th constraint gradient at `x` in place."
-function jth_congrad!(nlp :: AmplModel, x :: Vector{Float64}, j :: Int, g :: Vector{Float64})
+function jth_congrad!(nlp :: AmplModel, x :: AbstractVector, j :: Int, g :: AbstractVector)
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -287,7 +287,7 @@ function jth_congrad!(nlp :: AmplModel, x :: Vector{Float64}, j :: Int, g :: Vec
 end
 
 "Evaluate the `j`-th constraint sparse gradient at `x`."
-function jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
+function jth_sparse_congrad(nlp :: AmplModel, x :: AbstractVector, j :: Int)
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -309,7 +309,7 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
 end
 
 "Evaluate the constraints Jacobian at `x` in sparse coordinate format."
-function jac_coord(nlp :: AmplModel, x :: Vector{Float64})
+function jac_coord(nlp :: AmplModel, x :: AbstractVector)
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -329,7 +329,7 @@ function jac_coord(nlp :: AmplModel, x :: Vector{Float64})
 end
 
 "Evaluate the constraints Jacobian at `x` as a sparse matrix."
-function jac(nlp :: AmplModel, x :: Vector{Float64})
+function jac(nlp :: AmplModel, x :: AbstractVector)
   @check_ampl_model
   (rows, cols, vals) = jac_coord(nlp, x)
   return sparse(rows, cols, vals, nlp.meta.ncon, nlp.meta.nvar)
@@ -339,7 +339,7 @@ end
 Evaluate the Jacobian-vector product at `x`.
 Warning: Currently building the Jacobian for this.
 """
-function jprod(nlp :: AmplModel, x :: Vector{Float64}, v :: Vector{Float64})
+function jprod(nlp :: AmplModel, x :: AbstractVector, v :: AbstractVector)
   Jv = zeros(nlp.meta.ncon)
   return jprod!(nlp, x, v, Jv)
 end
@@ -349,9 +349,9 @@ Evaluate the Jacobian-vector product at `x` in place.
 Warning: Currently building the Jacobian for this.
 """
 function jprod!(nlp :: AmplModel,
-                x :: Vector{Float64},
-                v :: Vector{Float64},
-                Jv :: Vector{Float64})
+                x :: AbstractVector,
+                v :: AbstractVector,
+                Jv :: AbstractVector)
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jprod += 1
   Jv[1:nlp.meta.ncon] = jac(nlp, x) * v
@@ -362,7 +362,7 @@ end
 Evaluate the transposed-Jacobian-vector product at `x`.
 Warning: Currently building the Jacobian for this.
 """
-function jtprod(nlp :: AmplModel, x :: Vector{Float64}, v :: Vector{Float64})
+function jtprod(nlp :: AmplModel, x :: AbstractVector, v :: AbstractVector)
   Jtv = zeros(nlp.meta.nvar)
   return jtprod!(nlp, x, v, Jtv)
 end
@@ -372,9 +372,9 @@ Evaluate the transposed-Jacobian-vector product at `x` in place.
 Warning: Currently building the Jacobian for this.
 """
 function jtprod!(nlp :: AmplModel,
-                 x :: Vector{Float64},
-                 v :: Vector{Float64},
-                 Jtv :: Vector{Float64})
+                 x :: AbstractVector,
+                 v :: AbstractVector,
+                 Jtv :: AbstractVector)
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jtprod += 1
   Jtv[1:nlp.meta.nvar] = jac(nlp, x)' * v
@@ -383,9 +383,9 @@ end
 
 "Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v`."
 function hprod(nlp :: AmplModel,
-               x :: Vector{Float64},
-               v :: Vector{Float64};
-               y :: Vector{Float64} = nlp.meta.y0,
+               x :: AbstractVector,
+               v :: AbstractVector;
+               y :: AbstractVector = nlp.meta.y0,
                obj_weight :: Float64 = 1.0)
   hv = Vector{Float64}(undef, nlp.meta.nvar);
   return hprod!(nlp, x, v, hv, y=y, obj_weight=obj_weight)
@@ -393,10 +393,10 @@ end
 
 "Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v` in place."
 function hprod!(nlp :: AmplModel,
-                x :: Vector{Float64},
-                v :: Vector{Float64},
-                hv :: Vector{Float64};
-                y :: Vector{Float64} = nlp.meta.y0,
+                x :: AbstractVector,
+                v :: AbstractVector,
+                hv :: AbstractVector;
+                y :: AbstractVector = nlp.meta.y0,
                 obj_weight :: Float64 = 1.0)
   # Note: x is in fact not used in hprod.
   @check_ampl_model
@@ -419,7 +419,7 @@ end
 The objective Hessian is used if `j=0`.
 """
 function jth_hprod(nlp :: AmplModel,
-                   x :: Vector{Float64}, v :: Vector{Float64}, j :: Int)
+                   x :: AbstractVector, v :: AbstractVector, j :: Int)
   hv = Vector{Float64}(undef, nlp.meta.nvar)
   return jth_hprod!(nlp, x, v, j, hv)
 end
@@ -428,8 +428,8 @@ end
 The objective Hessian is used if `j=0`.
 """
 function jth_hprod!(nlp :: AmplModel,
-                    x :: Vector{Float64}, v :: Vector{Float64},
-                    j :: Int, hv :: Vector{Float64})
+                    x :: AbstractVector, v :: AbstractVector,
+                    j :: Int, hv :: AbstractVector)
 # Note: x is in fact not used in hprod.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -454,7 +454,7 @@ end
 where `Hj` is the Hessian of the `j`-th constraint at `x`.
 """
 function ghjvprod(nlp :: AmplModel,
-                  x :: Vector{Float64}, g :: Vector{Float64}, v :: Vector{Float64})
+                  x :: AbstractVector, g :: AbstractVector, v :: AbstractVector)
   gHv = Vector{Float64}(undef, nlp.meta.ncon);
   return ghjvprod!(nlp, x, g, v, gHv)
 end
@@ -463,8 +463,8 @@ end
 where `Hj` is the Hessian of the `j`-th constraint at `x`.
 """
 function ghjvprod!(nlp :: AmplModel,
-                   x :: Vector{Float64}, g :: Vector{Float64},
-                   v :: Vector{Float64}, gHv :: Vector{Float64})
+                   x :: AbstractVector, g :: AbstractVector,
+                   v :: AbstractVector, gHv :: AbstractVector)
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -484,8 +484,8 @@ end
 Only the lower triangle is returned.
 """
 function hess_coord(nlp :: AmplModel,
-                    x :: Vector{Float64};
-                    y :: Vector{Float64} = nlp.meta.y0,
+                    x :: AbstractVector;
+                    y :: AbstractVector = nlp.meta.y0,
                     obj_weight :: Float64 = 1.0)
   # Note: x is in fact not used.
   @check_ampl_model
@@ -515,8 +515,8 @@ end
 Only the lower triangle is returned.
 """
 function hess(nlp :: AmplModel,
-              x :: Vector{Float64};
-              y :: Vector{Float64} = nlp.meta.y0,
+              x :: AbstractVector;
+              y :: AbstractVector = nlp.meta.y0,
               obj_weight :: Float64 = 1.0)
   @check_ampl_model
   (rows, cols, vals) = hess_coord(nlp, x, y=y, obj_weight=obj_weight);
