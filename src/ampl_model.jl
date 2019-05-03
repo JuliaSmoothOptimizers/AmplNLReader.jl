@@ -3,9 +3,11 @@ export AmplModel, AmplException,
        write_sol, amplmodel_finalize, varscale, lagscale, conscale,
        obj, grad, grad!,
        cons, cons!, jth_con, jth_congrad, jth_congrad!, jth_sparse_congrad,
+       jac_structure, jac_structure!,
        jac_coord, jac, jprod, jprod!, jtprod, jtprod!,
        jth_hprod, jth_hprod!, ghjvprod, ghjvprod!,
-       hess_coord, hess, hprod, hprod!
+       hess_structure, hess_structure!,
+       hess_coord, hess_coord!, hess, hprod, hprod!
 
 # Convenience macro.
 macro asl_call(func, args...)
@@ -118,11 +120,14 @@ import NLPModels.varscale, NLPModels.lagscale, NLPModels.conscale
 import NLPModels.obj, NLPModels.grad, NLPModels.grad!
 import NLPModels.cons, NLPModels.cons!, NLPModels.jth_con
 import NLPModels.jth_congrad, NLPModels.jth_congrad!, NLPModels.jth_sparse_congrad
-import NLPModels.jac_coord, NLPModels.jac
+import NLPModels.jac_coord, NLPModels.jac_coord!, NLPModels.jac
+import NLPModels.jac_structure #, NLPModels.jac_structure!
 import NLPModels.jprod, NLPModels.jtprod, NLPModels.jprod!, NLPModels.jtprod!
 import NLPModels.jth_hprod, NLPModels.jth_hprod!
 import NLPModels.ghjvprod, NLPModels.ghjvprod!
-import NLPModels.hess_coord, NLPModels.hess, NLPModels.hprod, NLPModels.hprod!
+import NLPModels.hess_structure, NLPModels.hess_structure!
+import NLPModels.hess_coord, NLPModels.hess_coord!
+import NLPModels.hess, NLPModels.hprod, NLPModels.hprod!
 
 # Methods associated to AmplModel instances.
 
@@ -308,23 +313,75 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: AbstractVector, j :: Int)
   return sparsevec(inds, vals, nlp.meta.nvar)
 end
 
+"Evaluate the sparsity pattern of the Jacobian."
+function jac_structure(nlp :: AmplModel)
+  # this function is slightly wasteful but would otherwise require changes to
+  # the underlying C++ library
+  rows, cols, vals = jac_coord(nlp, nlp.meta.x0)
+  nlp.counters.neval_jac -= 1
+  return (rows, cols)
+end
+
+"Evaluate the sparsity pattern of the Jacobian in place."
+function jac_structure!(nlp :: AmplModel, rows :: Vector{Int}, cols :: Vector{Int})
+  vals = Vector{Float64}(undef, nlp.meta.nnzj)
+  jac_coord!(nlp, nlp.meta.x0, rows, cols, vals)
+  nlp.counters.neval_jac -= 1
+  return rows, cols
+end
+
+function jac_structure!(nlp :: AmplModel, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
+  rows_ = Vector{Cint}(undef, length(rows))
+  cols_ = Vector{Cint}(undef, length(cols))
+  jac_structure!(nlp, rows_, cols_)
+  rows .= rows_
+  cols .= cols_
+  return rows, cols
+end
+
 "Evaluate the constraints Jacobian at `x` in sparse coordinate format."
 function jac_coord(nlp :: AmplModel, x :: AbstractVector)
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint(0)
   rows = Vector{Cint}(undef, nlp.meta.nnzj)
   cols = Vector{Cint}(undef, nlp.meta.nnzj)
   vals = Vector{Float64}(undef, nlp.meta.nnzj)
+
+  return jac_coord!(nlp, x, rows, cols, vals)
+end
+
+"Evaluate the constraints Jacobian at `x` in sparse coordinate format in place."
+function jac_coord!(nlp :: AmplModel, x :: AbstractVector, rows :: Vector{Cint}, cols :: Vector{Cint}, vals :: Vector{Cdouble})
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
+  _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
+
+  err = Cint(0)
   @asl_call(:asl_jac, Nothing,
-            (Ptr{Nothing}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Float64}, Ref{Cint}),
-             nlp.__asl, x,            rows,      cols,      vals,         err)
+            (Ptr{Nothing}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}, Ref{Cint}),
+             nlp.__asl,    x,            rows,      cols,      vals,         err)
   nlp.counters.neval_jac += 1
   err == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
   # Use 1-based indexing.
   @. rows += 1
   @. cols += 1
+  return (rows, cols, vals)
+end
+
+function jac_coord!(nlp :: AmplModel,
+                    x :: AbstractVector,
+                    rows :: AbstractVector{<: Integer},
+                    cols :: AbstractVector{<: Integer},
+                    vals :: AbstractVector{<: AbstractFloat})
+  rows_ = Vector{Cint}(undef, length(rows))
+  cols_ = Vector{Cint}(undef, length(cols))
+  vals_ = Vector{Cdouble}(undef, length(vals))
+  jac_coord!(nlp, x, rows_, cols_, vals_)
+  rows .= rows_
+  cols .= cols_
+  vals .= vals_
   return (rows, cols, vals)
 end
 
@@ -480,6 +537,32 @@ function ghjvprod!(nlp :: AmplModel,
   nlp.counters.neval_hprod += nlp.meta.ncon
 end
 
+"Evaluate the sparsity pattern of the Hessian."
+function hess_structure(nlp :: AmplModel)
+  # this function is slightly wasteful but would otherwise require changes to
+  # the underlying C++ library
+  rows, cols, vals = hess_coord(nlp, nlp.meta.x0)
+  nlp.counters.neval_hess -= 1
+  return (rows, cols)
+end
+
+"Evaluate the sparsity pattern of the Hessian in place."
+function hess_structure!(nlp :: AmplModel, rows :: Vector{Cint}, cols :: Vector{Cint})
+  vals = Vector{Float64}(undef, nlp.meta.nnzh)
+  hess_coord!(nlp, nlp.meta.x0, rows, cols, vals)
+  nlp.counters.neval_hess -= 1
+  return (rows, cols)
+end
+
+function hess_structure!(nlp :: AmplModel, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
+  rows_ = Vector{Cint}(undef, length(rows))
+  cols_ = Vector{Cint}(undef, length(cols))
+  hess_structure!(nlp, rows_, cols_)
+  rows .= rows_
+  cols .= cols_
+  return (rows, cols)
+end
+
 """Evaluate the Lagrangian Hessian at `(x,y)` in sparse coordinate format.
 Only the lower triangle is returned.
 """
@@ -492,23 +575,57 @@ function hess_coord(nlp :: AmplModel,
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
   length(y) >= nlp.meta.ncon || error("y must have length at least $(nlp.meta.ncon)")
 
-  if nlp.safe
-    _ = obj(nlp, x) ; nlp.counters.neval_obj -= 1
-    _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
-  end
-
   rows = Vector{Cint}(undef, nlp.meta.nnzh)
   cols = Vector{Cint}(undef, nlp.meta.nnzh)
   vals = Vector{Float64}(undef, nlp.meta.nnzh)
+
+  return hess_coord!(nlp, x, rows, cols, vals, y=y, obj_weight=obj_weight)
+end
+
+"""Evaluate the Lagrangian Hessian at `(x,y)` in sparse coordinate format in place.
+Only the lower triangle is returned.
+"""
+function hess_coord!(nlp :: AmplModel,
+                     x :: AbstractVector,
+                     rows :: Vector{Cint},
+                     cols :: Vector{Cint},
+                     vals :: Vector{Cdouble};
+                     y :: AbstractVector = nlp.meta.y0,
+                     obj_weight :: Float64 = 1.0)
+  # Note: x is in fact not used.
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(y) >= nlp.meta.ncon || error("y must have length at least $(nlp.meta.ncon)")
+
+  # if nlp.safe
+    _ = obj(nlp, x) ; nlp.counters.neval_obj -= 1
+    _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
+  # end
+
   @asl_call(:asl_hess, Nothing,
-            (Ptr{Nothing}, Ptr{Float64}, Float64,    Ptr{Cint}, Ptr{Cint}, Ptr{Float64}),
-             nlp.__asl, y,            obj_weight, rows,      cols,      vals)
+            (Ptr{Nothing}, Ptr{Float64}, Float64,    Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}),
+             nlp.__asl,    y,            obj_weight, cols,      rows,      vals)
   nlp.counters.neval_hess += 1
   # Use 1-based indexing.
   # Swap rows and cols to obtain the lower triangle.
   @. cols += 1
   @. rows += 1
-  return (cols, rows, vals)
+  return (rows, cols, vals)
+end
+
+function hess_coord!(nlp :: AmplModel,
+                     x :: AbstractVector,
+                     rows :: AbstractVector{<: Integer},
+                     cols :: AbstractVector{<: Integer},
+                     vals :: AbstractVector{<: AbstractFloat}; kwargs...)
+  rows_ = Vector{Cint}(undef, length(rows))
+  cols_ = Vector{Cint}(undef, length(cols))
+  vals_ = Vector{Cdouble}(undef, length(vals))
+  hess_coord!(nlp, x, rows_, cols_, vals_; kwargs...)
+  rows .= rows_
+  cols .= cols_
+  vals .= vals_
+  return (rows, cols, vals)
 end
 
 """Evaluate the Lagrangian Hessian at `(x,y)` as a sparse matrix.
