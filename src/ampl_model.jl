@@ -117,17 +117,17 @@ end
 import Base.show, Base.print
 import NLPModels.reset!
 import NLPModels.varscale, NLPModels.lagscale, NLPModels.conscale
-import NLPModels.obj, NLPModels.grad, NLPModels.grad!
-import NLPModels.cons, NLPModels.cons!, NLPModels.jth_con
-import NLPModels.jth_congrad, NLPModels.jth_congrad!, NLPModels.jth_sparse_congrad
-import NLPModels.jac_coord, NLPModels.jac_coord!, NLPModels.jac
-import NLPModels.jac_structure #, NLPModels.jac_structure!
-import NLPModels.jprod, NLPModels.jtprod, NLPModels.jprod!, NLPModels.jtprod!
-import NLPModels.jth_hprod, NLPModels.jth_hprod!
-import NLPModels.ghjvprod, NLPModels.ghjvprod!
-import NLPModels.hess_structure, NLPModels.hess_structure!
-import NLPModels.hess_coord, NLPModels.hess_coord!
-import NLPModels.hess, NLPModels.hprod, NLPModels.hprod!
+import NLPModels.obj, NLPModels.grad!
+import NLPModels.cons!, NLPModels.jth_con
+import NLPModels.jth_congrad!, NLPModels.jth_sparse_congrad
+import NLPModels.jac_coord!
+import NLPModels.jac_structure!
+import NLPModels.jprod!, NLPModels.jtprod!
+import NLPModels.jth_hprod!
+import NLPModels.ghjvprod!
+import NLPModels.hess_structure!
+import NLPModels.hess_coord!
+import NLPModels.hprod!
 
 # Methods associated to AmplModel instances.
 
@@ -215,12 +215,6 @@ function obj(nlp :: AmplModel, x :: AbstractVector)
   return f
 end
 
-"Evaluate the gradient of the objective function at `x`."
-function grad(nlp :: AmplModel, x :: AbstractVector)
-  g = Vector{Float64}(undef, nlp.meta.nvar)
-  return grad!(nlp, x, g)
-end
-
 "Evaluate the gradient of the objective function at `x` in place."
 function grad!(nlp :: AmplModel, x :: AbstractVector, g :: AbstractVector)
   @check_ampl_model
@@ -233,12 +227,6 @@ function grad!(nlp :: AmplModel, x :: AbstractVector, g :: AbstractVector)
   nlp.counters.neval_grad += 1
   err == 0 || throw(AmplException("Error while evaluating objective gradient"))
   return g
-end
-
-"Evaluate the constraints at `x`."
-function cons(nlp :: AmplModel, x :: AbstractVector)
-  c = Vector{Float64}(undef, nlp.meta.ncon)
-  return cons!(nlp, x, c)
 end
 
 "Evaluate the constraints at `x` in place."
@@ -268,12 +256,6 @@ function jth_con(nlp :: AmplModel, x :: AbstractVector, j :: Int)
   nlp.counters.neval_jcon += 1
   err == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
   return cj
-end
-
-"Evaluate the `j`-th constraint gradient at `x`."
-function jth_congrad(nlp :: AmplModel, x :: AbstractVector, j :: Int)
-  g = Vector{Float64}(undef, nlp.meta.nvar)
-  return jth_congrad!(nlp, x, j, g)
 end
 
 "Evaluate the `j`-th constraint gradient at `x` in place."
@@ -313,17 +295,10 @@ function jth_sparse_congrad(nlp :: AmplModel, x :: AbstractVector, j :: Int)
   return sparsevec(inds, vals, nlp.meta.nvar)
 end
 
-"Evaluate the sparsity pattern of the Jacobian."
-function jac_structure(nlp :: AmplModel)
-  # this function is slightly wasteful but would otherwise require changes to
-  # the underlying C++ library
-  rows, cols, vals = jac_coord(nlp, nlp.meta.x0)
-  nlp.counters.neval_jac -= 1
-  return (rows, cols)
-end
-
 "Evaluate the sparsity pattern of the Jacobian in place."
 function jac_structure!(nlp :: AmplModel, rows :: Vector{Int}, cols :: Vector{Int})
+  # this function is slightly wasteful but would otherwise require changes to
+  # the underlying C++ library
   vals = Vector{Float64}(undef, nlp.meta.nnzj)
   jac_coord!(nlp, nlp.meta.x0, rows, cols, vals)
   nlp.counters.neval_jac -= 1
@@ -331,24 +306,12 @@ function jac_structure!(nlp :: AmplModel, rows :: Vector{Int}, cols :: Vector{In
 end
 
 function jac_structure!(nlp :: AmplModel, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
-  rows_ = Vector{Cint}(undef, length(rows))
-  cols_ = Vector{Cint}(undef, length(cols))
+  rows_ = Vector{Cint}(undef, nlp.meta.nnzj)
+  cols_ = Vector{Cint}(undef, nlp.meta.nnzj)
   jac_structure!(nlp, rows_, cols_)
-  rows .= rows_
-  cols .= cols_
+  rows[1 : nlp.meta.nnzj] .= rows_
+  cols[1 : nlp.meta.nnzj] .= cols_
   return rows, cols
-end
-
-"Evaluate the constraints Jacobian at `x` in sparse coordinate format."
-function jac_coord(nlp :: AmplModel, x :: AbstractVector)
-  @check_ampl_model
-  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
-
-  rows = Vector{Cint}(undef, nlp.meta.nnzj)
-  cols = Vector{Cint}(undef, nlp.meta.nnzj)
-  vals = Vector{Float64}(undef, nlp.meta.nnzj)
-
-  return jac_coord!(nlp, x, rows, cols, vals)
 end
 
 "Evaluate the constraints Jacobian at `x` in sparse coordinate format in place."
@@ -365,8 +328,8 @@ function jac_coord!(nlp :: AmplModel, x :: AbstractVector, rows :: Vector{Cint},
   nlp.counters.neval_jac += 1
   err == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
   # Use 1-based indexing.
-  @. rows += 1
-  @. cols += 1
+  @. rows[1 : nlp.meta.nnzj] += 1
+  @. cols[1 : nlp.meta.nnzj] += 1
   return (rows, cols, vals)
 end
 
@@ -375,30 +338,14 @@ function jac_coord!(nlp :: AmplModel,
                     rows :: AbstractVector{<: Integer},
                     cols :: AbstractVector{<: Integer},
                     vals :: AbstractVector{<: AbstractFloat})
-  rows_ = Vector{Cint}(undef, length(rows))
-  cols_ = Vector{Cint}(undef, length(cols))
-  vals_ = Vector{Cdouble}(undef, length(vals))
+  rows_ = Vector{Cint}(undef, nlp.meta.nnzj)
+  cols_ = Vector{Cint}(undef, nlp.meta.nnzj)
+  vals_ = Vector{Cdouble}(undef, nlp.meta.nnzj)
   jac_coord!(nlp, x, rows_, cols_, vals_)
-  rows .= rows_
-  cols .= cols_
-  vals .= vals_
+  rows[1 : nlp.meta.nnzj] .= rows_
+  cols[1 : nlp.meta.nnzj] .= cols_
+  vals[1 : nlp.meta.nnzj] .= vals_
   return (rows, cols, vals)
-end
-
-"Evaluate the constraints Jacobian at `x` as a sparse matrix."
-function jac(nlp :: AmplModel, x :: AbstractVector)
-  @check_ampl_model
-  (rows, cols, vals) = jac_coord(nlp, x)
-  return sparse(rows, cols, vals, nlp.meta.ncon, nlp.meta.nvar)
-end
-
-"""
-Evaluate the Jacobian-vector product at `x`.
-Warning: Currently building the Jacobian for this.
-"""
-function jprod(nlp :: AmplModel, x :: AbstractVector, v :: AbstractVector)
-  Jv = zeros(nlp.meta.ncon)
-  return jprod!(nlp, x, v, Jv)
 end
 
 """
@@ -416,15 +363,6 @@ function jprod!(nlp :: AmplModel,
 end
 
 """
-Evaluate the transposed-Jacobian-vector product at `x`.
-Warning: Currently building the Jacobian for this.
-"""
-function jtprod(nlp :: AmplModel, x :: AbstractVector, v :: AbstractVector)
-  Jtv = zeros(nlp.meta.nvar)
-  return jtprod!(nlp, x, v, Jtv)
-end
-
-"""
 Evaluate the transposed-Jacobian-vector product at `x` in place.
 Warning: Currently building the Jacobian for this.
 """
@@ -436,16 +374,6 @@ function jtprod!(nlp :: AmplModel,
   nlp.counters.neval_jtprod += 1
   Jtv[1:nlp.meta.nvar] = jac(nlp, x)' * v
   return Jtv
-end
-
-"Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v`."
-function hprod(nlp :: AmplModel,
-               x :: AbstractVector,
-               v :: AbstractVector;
-               y :: AbstractVector = nlp.meta.y0,
-               obj_weight :: Float64 = 1.0)
-  hv = Vector{Float64}(undef, nlp.meta.nvar);
-  return hprod!(nlp, x, v, hv, y=y, obj_weight=obj_weight)
 end
 
 "Evaluate the product of the Lagrangian Hessian at `(x,y)` with the vector `v` in place."
@@ -470,15 +398,6 @@ function hprod!(nlp :: AmplModel,
              nlp.__asl, y,            v,            hv,           obj_weight);
   nlp.counters.neval_hprod += 1
   return hv
-end
-
-"""Evaluate the product of the `j`-th constraint Hessian at `x` with the vector `v`.
-The objective Hessian is used if `j=0`.
-"""
-function jth_hprod(nlp :: AmplModel,
-                   x :: AbstractVector, v :: AbstractVector, j :: Int)
-  hv = Vector{Float64}(undef, nlp.meta.nvar)
-  return jth_hprod!(nlp, x, v, j, hv)
 end
 
 """Evaluate the product of the `j`-th constraint Hessian at `x` with the vector `v` in place.
@@ -507,15 +426,6 @@ function jth_hprod!(nlp :: AmplModel,
   return hv
 end
 
-"""Compute the vector of dot products `(g, Hj*v)`
-where `Hj` is the Hessian of the `j`-th constraint at `x`.
-"""
-function ghjvprod(nlp :: AmplModel,
-                  x :: AbstractVector, g :: AbstractVector, v :: AbstractVector)
-  gHv = Vector{Float64}(undef, nlp.meta.ncon);
-  return ghjvprod!(nlp, x, g, v, gHv)
-end
-
 """Compute the vector of dot products `(g, Hj*v)` in place
 where `Hj` is the Hessian of the `j`-th constraint at `x`.
 """
@@ -537,15 +447,6 @@ function ghjvprod!(nlp :: AmplModel,
   nlp.counters.neval_hprod += nlp.meta.ncon
 end
 
-"Evaluate the sparsity pattern of the Hessian."
-function hess_structure(nlp :: AmplModel)
-  # this function is slightly wasteful but would otherwise require changes to
-  # the underlying C++ library
-  rows, cols, vals = hess_coord(nlp, nlp.meta.x0)
-  nlp.counters.neval_hess -= 1
-  return (rows, cols)
-end
-
 "Evaluate the sparsity pattern of the Hessian in place."
 function hess_structure!(nlp :: AmplModel, rows :: Vector{Cint}, cols :: Vector{Cint})
   vals = Vector{Float64}(undef, nlp.meta.nnzh)
@@ -561,25 +462,6 @@ function hess_structure!(nlp :: AmplModel, rows :: AbstractVector{<: Integer}, c
   rows .= rows_
   cols .= cols_
   return (rows, cols)
-end
-
-"""Evaluate the Lagrangian Hessian at `(x,y)` in sparse coordinate format.
-Only the lower triangle is returned.
-"""
-function hess_coord(nlp :: AmplModel,
-                    x :: AbstractVector;
-                    y :: AbstractVector = nlp.meta.y0,
-                    obj_weight :: Float64 = 1.0)
-  # Note: x is in fact not used.
-  @check_ampl_model
-  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
-  length(y) >= nlp.meta.ncon || error("y must have length at least $(nlp.meta.ncon)")
-
-  rows = Vector{Cint}(undef, nlp.meta.nnzh)
-  cols = Vector{Cint}(undef, nlp.meta.nnzh)
-  vals = Vector{Float64}(undef, nlp.meta.nnzh)
-
-  return hess_coord!(nlp, x, rows, cols, vals, y=y, obj_weight=obj_weight)
 end
 
 """Evaluate the Lagrangian Hessian at `(x,y)` in sparse coordinate format in place.
@@ -626,16 +508,4 @@ function hess_coord!(nlp :: AmplModel,
   cols .= cols_
   vals .= vals_
   return (rows, cols, vals)
-end
-
-"""Evaluate the Lagrangian Hessian at `(x,y)` as a sparse matrix.
-Only the lower triangle is returned.
-"""
-function hess(nlp :: AmplModel,
-              x :: AbstractVector;
-              y :: AbstractVector = nlp.meta.y0,
-              obj_weight :: Float64 = 1.0)
-  @check_ampl_model
-  (rows, cols, vals) = hess_coord(nlp, x, y=y, obj_weight=obj_weight);
-  return sparse(rows, cols, vals, nlp.meta.nvar, nlp.meta.nvar)
 end
