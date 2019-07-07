@@ -1,4 +1,5 @@
 using Test
+using NLPModels
 using AmplNLReader
 using LinearAlgebra
 using Printf
