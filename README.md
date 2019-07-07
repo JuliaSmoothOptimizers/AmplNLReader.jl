@@ -1,5 +1,13 @@
 # AmplNLReader.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
+### Stable release [![Github release](https://img.shields.io/github/release/JuliaSmoothOptimizers/AmplNLReader.jl.svg)](https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl/releases/latest)
+
+- Documentation: [![Documentation](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaSmoothOptimizers.github.io/AmplNLReader.jl/stable)
+
+### Development version
+
+- Documentation: [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaSmoothOptimizers.github.io/AmplNLReader.jl/latest)
+- Tests:
 [![Master Build Status](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/master?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl/branch/master)
 [![Master Coverage Status](https://coveralls.io/repos/JuliaSmoothOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaSmoothOptimizers/AmplNLReader.jl?branch=master)
