@@ -258,6 +258,27 @@ void asl_jac(ASL *asl, double *x, int *rows, int *cols, double *vals, int *err) 
     }
 }
 
+// Evaluate Jacobian sparsity pattern (rows, cols).
+void asl_jac_structure(ASL *asl, int *rows, int *cols) {
+  int this_ncon = asl->i.n_con_;
+
+  // Fill in sparsity pattern.
+  for (int j = 0; j < this_ncon; j++)
+    for (cgrad *cg = asl->i.Cgrad_[j]; cg; cg = cg->next) {
+      rows[cg->goff] = j;
+      cols[cg->goff] = cg->varno;
+    }
+}
+
+// Evaluate Jacobian at x as if in triplet form, but only fill in the values.
+void asl_jacval(ASL *asl, double *x, double *vals, int *err) {
+  int this_ncon = asl->i.n_con_;
+
+  fint ne;
+  asl->p.Jacval(asl, x, vals, &ne);
+  *err = ne;
+}
+
 // Hessian.
 
 void asl_hprod(ASL *asl, double *y, double *v, double *hv, double w) {
@@ -308,4 +329,25 @@ void asl_hess(
       k++;
     }
   }
+}
+
+// Return Hessian sparsity pattern (rows, cols).
+// asl->Sphset must have been called previously.
+void asl_hess_structure(ASL *asl, int *rows, int *cols) {
+  int k = 0;
+  for (fint i = 0; i < asl->i.n_var_; i++) {
+    for (fint j = asl->i.sputinfo_->hcolstarts[i];
+         j < asl->i.sputinfo_->hcolstarts[i+1]; j++) {
+      rows[k] = static_cast<int>(asl->i.sputinfo_->hrownos[j]);
+      cols[k] = static_cast<int>(i);
+      k++;
+    }
+  }
+}
+
+// Return Hessian at (x,y) as if in triplet form, but only fill in the values.
+void asl_hessval(
+    ASL *asl, double *y, double w, double *vals) {
+  double ow = asl->i.objtype_[0] ? -w : w;  // Objective weight.
+  asl->p.Sphes(asl, 0, vals, -1, &ow, y);
 }
