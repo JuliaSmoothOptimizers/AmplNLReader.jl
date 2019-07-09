@@ -192,7 +192,7 @@ function NLPModels.grad!(nlp :: AmplModel, x :: AbstractVector, g :: AbstractVec
   err = Cint(0)
   @asl_call(:asl_grad, Ptr{Float64},
             (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Ref{Cint}),
-             nlp.__asl, x,            g,            err)
+             nlp.__asl,    x,            g,            err)
   nlp.counters.neval_grad += 1
   err == 0 || throw(AmplException("Error while evaluating objective gradient"))
   return g
@@ -205,7 +205,7 @@ function NLPModels.cons!(nlp :: AmplModel, x :: AbstractVector, c :: AbstractVec
   err = Cint(0)
   @asl_call(:asl_cons, Nothing,
             (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Ref{Cint}),
-             nlp.__asl, x,            c,            err)
+             nlp.__asl,    x,            c,            err)
   nlp.counters.neval_cons += 1
   err == 0 || throw(AmplException("Error while evaluating constraints"))
   return c
@@ -219,7 +219,7 @@ function NLPModels.jth_con(nlp :: AmplModel, x :: AbstractVector, j :: Int)
   err = Cint(0)
   cj = @asl_call(:asl_jcon, Float64,
                  (Ptr{Nothing}, Ptr{Float64}, Int32, Ref{Cint}),
-                  nlp.__asl, x,            j-1,   err)
+                  nlp.__asl,    x,            j-1,   err)
   nlp.counters.neval_jcon += 1
   err == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
   return cj
@@ -233,7 +233,7 @@ function NLPModels.jth_congrad!(nlp :: AmplModel, x :: AbstractVector, j :: Int,
   err = Cint(0)
   @asl_call(:asl_jcongrad, Ptr{Float64},
             (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Int32, Ref{Cint}),
-             nlp.__asl, x,            g,            j-1,   err)
+             nlp.__asl,    x,            g,            j-1,   err)
   nlp.counters.neval_jgrad += 1
   err == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
   return g
@@ -349,7 +349,7 @@ function NLPModels.hprod!(nlp :: AmplModel,
   end
   @asl_call(:asl_hprod, Ptr{Float64},
             (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
-             nlp.__asl, y,            v,            hv,           obj_weight);
+             nlp.__asl,    y,            v,            hv,           obj_weight);
   nlp.counters.neval_hprod += 1
   return hv
 end
@@ -372,7 +372,7 @@ function NLPModels.jth_hprod!(nlp :: AmplModel,
   end
   @asl_call(:asl_hvcompd, Ptr{Float64},
             (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Int),
-             nlp.__asl, v,            hv,           j-1);
+             nlp.__asl,    v,            hv,           j-1);
   nlp.counters.neval_jhprod += 1
   return hv
 end
@@ -391,7 +391,7 @@ function NLPModels.ghjvprod!(nlp :: AmplModel,
   end
   @asl_call(:asl_ghjvprod, Ptr{Float64},
             (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
-             nlp.__asl, g,            v,            gHv);
+             nlp.__asl,    g,            v,            gHv);
   nlp.counters.neval_hprod += nlp.meta.ncon
 end
 
