@@ -70,8 +70,12 @@ size_t asl_sparse_congrad_nnz(ASL *asl, int j);
 void asl_sparse_congrad(
     ASL *asl, double *x, int j, int *inds, double *vals, int *err);
 void asl_jac( ASL *asl, double *x, int *rows, int *cols, double *vals, int *err);
+void asl_jac_structure( ASL *asl, int *rows, int *cols);
+void asl_jacval( ASL *asl, double *x, double *vals, int *err);
 void asl_hess(
     ASL *asl, double *y, double w, int *rows, int *cols, double *vals);
+void asl_hess_structure(ASL *asl, int *rows, int *cols);
+void asl_hessval(ASL *asl, double *y, double w, double *vals);
 
 #ifdef __cplusplus
 }  // extern "C"
