@@ -285,7 +285,7 @@ function NLPModels.jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j 
   nlp.counters.neval_jgrad += 1
   err == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
   # Use 1-based indexing.
-  @. inds += 1
+  @. inds += Cint(1)
   return sparsevec(inds, vals, nlp.meta.nvar)
 end
 
@@ -296,8 +296,8 @@ function NLPModels.jac_structure!(nlp :: AmplModel, rows :: Vector{Cint}, cols :
             (Ptr{Nothing}, Ptr{Int32}, Ptr{Int32}),
              nlp.__asl,    rows,      cols)
   # Use 1-based indexing.
-  @. rows[1 : nlp.meta.nnzj] += 1
-  @. cols[1 : nlp.meta.nnzj] += 1
+  @. rows[1 : nlp.meta.nnzj] += Cint(1)
+  @. cols[1 : nlp.meta.nnzj] += Cint(1)
   return rows, cols
 end
 
@@ -464,8 +464,8 @@ function NLPModels.hess_structure!(nlp :: AmplModel, rows :: Vector{Cint}, cols 
             (Ptr{Nothing}, Ptr{Int32}, Ptr{Int32}),
              nlp.__asl,    cols,      rows)
   # Use 1-based indexing.
-  @. cols += 1
-  @. rows += 1
+  @. cols += Cint(1)
+  @. rows += Cint(1)
   return (rows, cols)
 end
 
