@@ -282,7 +282,7 @@ void asl_jacval(ASL *asl, double *x, double *vals, int *err) {
 // Hessian.
 
 void asl_hprod(ASL *asl, double *y, double *v, double *hv, double w) {
-  double ow  = asl->i.objtype_[0] ? -w : w;  // Objective weight.
+  double ow = w;
   hvpinit_ASL(asl, asl->p.ihd_limit_, 0, NULL, y);
   asl->p.Hvcomp(asl, hv, v, -1, &ow, y); // nobj=-1 so ow takes precedence.
 }
@@ -316,7 +316,7 @@ void asl_ghjvprod(ASL *asl, double *g, double *v, double *ghjv) {
 // Return Hessian at (x,y) in triplet form (rows, vals, cols).
 void asl_hess(
     ASL *asl, double *y, double w, int *rows, int *cols, double *vals) {
-  double ow = asl->i.objtype_[0] ? -w : w;  // Objective weight.
+  double ow = w;
   asl->p.Sphes(asl, 0, vals, -1, &ow, y);
 
   // Fill in sparsity pattern.
@@ -348,6 +348,6 @@ void asl_hess_structure(ASL *asl, int *rows, int *cols) {
 // Return Hessian at (x,y) as if in triplet form, but only fill in the values.
 void asl_hessval(
     ASL *asl, double *y, double w, double *vals) {
-  double ow = asl->i.objtype_[0] ? -w : w;  // Objective weight.
+  double ow = w;
   asl->p.Sphes(asl, 0, vals, -1, &ow, y);
 }
