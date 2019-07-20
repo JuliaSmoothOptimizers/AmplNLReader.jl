@@ -72,3 +72,14 @@ amplmodel_finalize(hs9)
 @test_throws AmplException obj(hs9, hs9.meta.x0)
 @test_throws AmplException AmplModel("this_file_does_not_exist")
 @test_throws AmplException AmplModel("this_file_does_not_exist.nl")
+
+# check maximization problems are handled correctly, i.e.,
+# we do not explicitly change the sign of the objective
+# hs6max is the same as hs6 except we maximize the objective
+hs6min = AmplModel(joinpath(path, "hs6.nl"))
+hs6max = AmplModel(joinpath(path, "hs6max.nl"))
+x = hs6min.meta.x0
+@test obj(hs6min, x) ≈ obj(hs6max, x)
+@test all(grad(hs6min, x) .≈ grad(hs6max, x))
+@test all(Matrix(hess(hs6min, x)) .≈ Matrix(hess(hs6max, x)))
+
