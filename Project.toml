@@ -1,6 +1,6 @@
 name = "AmplNLReader"
 uuid = "77dd3d4c-cb1d-5e09-9340-85030ff7ba66"
-version = "0.4.0"
+version = "0.5.0"
 
 [deps]
 BinDeps = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
