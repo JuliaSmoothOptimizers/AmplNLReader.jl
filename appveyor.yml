@@ -25,6 +25,18 @@ environment:
     JULIA_URL: "https://julialang-s3.julialang.org/bin/winnt/x86/1.1/julia-1.1-latest-win32.exe"
 
   - MINGW_DIR: mingw64
+    JULIA_VER: 1.2
+    MINGW_URL: https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-win32/seh/x86_64-8.1.0-release-win32-seh-rt_v6-rev0.7z/download
+    MINGW_ARCHIVE: x86_64-8.1.0-release-win32-seh-rt_v6-rev0.7z
+    JULIA_URL: "https://julialang-s3.julialang.org/bin/winnt/x64/1.2/julia-1.2-latest-win64.exe"
+
+  - MINGW_DIR: mingw32
+    JULIA_VER: 1.2
+    MINGW_URL: https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/8.1.0/threads-win32/dwarf/i686-8.1.0-release-win32-dwarf-rt_v6-rev0.7z/download
+    MINGW_ARCHIVE: i686-8.1.0-release-win32-dwarf-rt_v6-rev0.7z
+    JULIA_URL: "https://julialang-s3.julialang.org/bin/winnt/x86/1.2/julia-1.2-latest-win32.exe"
+
+  - MINGW_DIR: mingw64
     JULIA_VER: nightly
     MINGW_URL: https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-win32/seh/x86_64-8.1.0-release-win32-seh-rt_v6-rev0.7z/download
     MINGW_ARCHIVE: x86_64-8.1.0-release-win32-seh-rt_v6-rev0.7z
