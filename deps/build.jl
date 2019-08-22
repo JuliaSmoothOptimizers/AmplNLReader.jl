@@ -1,5 +1,4 @@
 using BinDeps
-using Compat
 
 @BinDeps.setup
 
@@ -10,13 +9,13 @@ so = "so"
 all_load = "--whole-archive"
 noall_load = "--no-whole-archive"
 
-@static if Sys.isapple()
+@static if Base.Sys.isapple()
   so = "dylib"
   all_load = "-all_load"
   noall_load = "-noall_load"
 end
 
-@static if Sys.iswindows()
+@static if Base.Sys.iswindows()
   so = "dll"
   push!(BinDeps.defaults, BinDeps.BuildProcess)
 end
