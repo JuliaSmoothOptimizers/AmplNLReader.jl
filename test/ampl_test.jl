@@ -17,7 +17,7 @@ function exercise_ampl_model(nlp :: AmplModel)
   g = grad(nlp, nlp.meta.x0)
   c = cons(nlp, nlp.meta.x0)
   J = jac( nlp, nlp.meta.x0)
-  H = hess(nlp, nlp.meta.x0, y=ones(nlp.meta.ncon,))
+  H = hess(nlp, nlp.meta.x0, ones(nlp.meta.ncon,))
 
   @printf("f(x0) = %f\n", f)
   @printf("∇f(x0) = "); display(g'); @printf("\n")

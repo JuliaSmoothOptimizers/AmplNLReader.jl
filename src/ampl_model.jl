@@ -310,7 +310,7 @@ function NLPModels.jac_structure!(nlp :: AmplModel, rows :: AbstractVector{<: In
   return rows, cols
 end
 
-function NLPModels.jac_coord!(nlp :: AmplModel, x :: Vector{Float64}, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer}, vals :: Vector{Cdouble})
+function NLPModels.jac_coord!(nlp :: AmplModel, x :: Vector{Cdouble}, vals :: Vector{Cdouble})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
@@ -322,18 +322,14 @@ function NLPModels.jac_coord!(nlp :: AmplModel, x :: Vector{Float64}, rows :: Ab
              nlp.__asl,    x,            vals,         err)
   nlp.counters.neval_jac += 1
   err == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
-  return (rows, cols, vals)
+  return vals
 end
 
-function NLPModels.jac_coord!(nlp :: AmplModel,
-                              x :: AbstractVector,
-                              rows :: AbstractVector{<: Integer},
-                              cols :: AbstractVector{<: Integer},
-                              vals :: AbstractVector{<: AbstractFloat})
+function NLPModels.jac_coord!(nlp :: AmplModel, x :: AbstractVector, vals :: AbstractVector{<: AbstractFloat})
   vals_ = Vector{Cdouble}(undef, nlp.meta.nnzj)
-  jac_coord!(nlp, Vector{Float64}(x), rows, cols, vals_)
+  jac_coord!(nlp, Vector{Cdouble}(x), vals_)
   vals[1 : nlp.meta.nnzj] .= vals_
-  return (rows, cols, vals)
+  return vals
 end
 
 function NLPModels.jprod!(nlp :: AmplModel,
@@ -358,9 +354,9 @@ end
 
 function NLPModels.hprod!(nlp :: AmplModel,
                           x :: AbstractVector,
-                          v :: Vector{Float64},
-                          hv :: Vector{Float64};
-                          y :: Vector{Float64} = nlp.meta.y0,
+                          y :: Vector{Cdouble},
+                          v :: Vector{Cdouble},
+                          hv :: Vector{Cdouble};
                           obj_weight :: Float64 = 1.0)
   # Note: x is in fact not used in hprod.
   @check_ampl_model
@@ -381,12 +377,12 @@ end
 
 function NLPModels.hprod!(nlp :: AmplModel,
                           x :: AbstractVector,
+                          y :: AbstractVector,
                           v :: AbstractVector,
                           hv :: AbstractVector;
-                          y :: AbstractVector = nlp.meta.y0,
                           obj_weight :: Float64=1.0)
   hv_ = Vector{Float64}(undef, nlp.meta.nvar)
-  hprod!(nlp, x, Vector{Float64}(v), hv_; y=Vector{Float64}(y), obj_weight=obj_weight)
+  hprod!(nlp, x, Vector{Cdouble}(y), Vector{Cdouble}(v), hv_; obj_weight=obj_weight)
   hv[1 : nlp.meta.nvar] .= hv_
   return hv
 end
@@ -480,10 +476,8 @@ end
 
 function NLPModels.hess_coord!(nlp :: AmplModel,
                                x :: AbstractVector,
-                               rows :: AbstractVector{<: Integer},
-                               cols :: AbstractVector{<: Integer},
+                               y :: Vector{Cdouble},
                                vals :: Vector{Cdouble};
-                               y :: Vector{Float64} = nlp.meta.y0,
                                obj_weight :: Float64 = 1.0)
   # Note: x is in fact not used.
   @check_ampl_model
@@ -499,16 +493,45 @@ function NLPModels.hess_coord!(nlp :: AmplModel,
             (Ptr{Nothing}, Ptr{Float64}, Float64,    Ptr{Cdouble}),
              nlp.__asl,    y,            obj_weight, vals)
   nlp.counters.neval_hess += 1
-  return (rows, cols, vals)
+  return vals
 end
 
 function NLPModels.hess_coord!(nlp :: AmplModel,
                                x :: AbstractVector,
-                               rows :: AbstractVector{<: Integer},
-                               cols :: AbstractVector{<: Integer},
+                               y :: AbstractVector{<: AbstractFloat},
                                vals :: AbstractVector{<: AbstractFloat}; kwargs...)
   vals_ = Vector{Cdouble}(undef, nlp.meta.nnzh)
-  hess_coord!(nlp, x, rows, cols, vals_; kwargs...)
+  hess_coord!(nlp, x, Vector{Cdouble}(y), vals_; kwargs...)
   vals[1 : nlp.meta.nnzh] .= vals_
-  return (rows, cols, vals)
+  return vals
+end
+
+# evaluate the objective Hessian
+function NLPModels.hess_coord!(nlp :: AmplModel,
+                               x :: AbstractVector,
+                               vals :: Vector{Cdouble};
+                               obj_weight :: Float64 = 1.0)
+  # Note: x is in fact not used.
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
+  # if nlp.safe
+    _ = obj(nlp, x) ; nlp.counters.neval_obj -= 1
+    _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
+  # end
+
+  @asl_call(:asl_hessval, Nothing,
+            (Ptr{Nothing}, Ptr{Cdouble}, Cdouble,    Ptr{Cdouble}),
+             nlp.__asl,    C_NULL,       obj_weight, vals)
+  nlp.counters.neval_hess += 1
+  return vals
+end
+
+function NLPModels.hess_coord!(nlp :: AmplModel,
+                               x :: AbstractVector,
+                               vals :: AbstractVector{<: AbstractFloat}; kwargs...)
+  vals_ = Vector{Cdouble}(undef, nlp.meta.nnzh)
+  hess_coord!(nlp, x, vals_; kwargs...)
+  vals[1 : nlp.meta.nnzh] .= vals_
+  return vals
 end
