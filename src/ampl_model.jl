@@ -390,15 +390,15 @@ function NLPModels.jth_hprod!(nlp :: AmplModel,
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
   length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
-  (1 <= j <= nlp.meta.ncon)  || error("expected 1 ≤ j ≤ $(nlp.meta.ncon)")
+  (0 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
 
-  if nlp.safe
+  # if nlp.safe
     if j == 0
       _ = obj(nlp, Vector{Cdouble}(x)) ; nlp.counters.neval_obj -= 1
     else
       _ = cons(nlp, Vector{Cdouble}(x)) ; nlp.counters.neval_cons -= 1
     end
-  end
+  # end
   @asl_call(:asl_hvcompd, Nothing,
             (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Int),
              nlp.__asl,    v,            hv,           j-1)
@@ -443,9 +443,9 @@ function NLPModels.ghjvprod!(nlp :: AmplModel,
                              g :: AbstractVector,
                              v :: AbstractVector,
                              gHv :: AbstractVector)
-  gHv_ = Vector{Cdouble}(undef, nlp.meta.nvar)
-  ghjvprod!(nlp, x, Vector{Cdouble}(x), Vector{Cdouble}(g), Vector{Cdouble}(v), gHv_)
-  gHv[1 : nlp.meta.var] .= gHv_
+  gHv_ = Vector{Cdouble}(undef, nlp.meta.ncon)
+  ghjvprod!(nlp, x, Vector{Cdouble}(g), Vector{Cdouble}(v), gHv_)
+  gHv[1 : nlp.meta.ncon] .= gHv_
   return gHv
 end
 
