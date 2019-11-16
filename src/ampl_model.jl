@@ -34,26 +34,22 @@ mutable struct AmplModel <: AbstractNLPModel
       isfile("$(stub).nl") || throw(AmplException("cannot find $(stub).nl"))
     end
 
-    asl = @asl_call(:asl_init, Ptr{Nothing}, (Ptr{UInt8},), stub);
+    asl = @asl_call(:asl_init, Ptr{Nothing}, (Ptr{UInt8},), stub)
     asl == C_NULL && error("Error allocating ASL structure")
 
-    minimize = @asl_call(:asl_objtype, Int32, (Ptr{Nothing},), asl) == 0;
-    islp = @asl_call(:asl_islp, Int32, (Ptr{Nothing},), asl) != 0;
+    minimize = @asl_call(:asl_objtype, Int32, (Ptr{Nothing},), asl) == 0
+    islp = @asl_call(:asl_islp, Int32, (Ptr{Nothing},), asl) != 0
 
-    nlo = Int(@asl_call(:asl_nlo, Int32, (Ptr{Nothing},), asl));
+    nlo = Int(@asl_call(:asl_nlo, Int32, (Ptr{Nothing},), asl))
 
-    nvar = Int(@asl_call(:asl_nvar, Int32, (Ptr{Nothing},), asl));
-    ncon = Int(@asl_call(:asl_ncon, Int32, (Ptr{Nothing},), asl));
+    nvar = Int(@asl_call(:asl_nvar, Int32, (Ptr{Nothing},), asl))
+    ncon = Int(@asl_call(:asl_ncon, Int32, (Ptr{Nothing},), asl))
 
-    x0   = unsafe_wrap(Array, @asl_call(:asl_x0,   Ptr{Float64}, (Ptr{Nothing},), asl),
-                            (nvar,), own=false)
-    y0   = unsafe_wrap(Array, @asl_call(:asl_y0,   Ptr{Float64}, (Ptr{Nothing},), asl),
-                            (ncon,), own=false)
+    x0   = unsafe_wrap(Array, @asl_call(:asl_x0, Ptr{Cdouble}, (Ptr{Nothing},), asl), (nvar,), own=false)
+    y0   = unsafe_wrap(Array, @asl_call(:asl_y0, Ptr{Cdouble}, (Ptr{Nothing},), asl), (ncon,), own=false)
 
-    lvar = unsafe_wrap(Array, @asl_call(:asl_lvar, Ptr{Float64}, (Ptr{Nothing},), asl),
-                            (nvar,), own=false)
-    uvar = unsafe_wrap(Array, @asl_call(:asl_uvar, Ptr{Float64}, (Ptr{Nothing},), asl),
-                            (nvar,), own=false)
+    lvar = unsafe_wrap(Array, @asl_call(:asl_lvar, Ptr{Cdouble}, (Ptr{Nothing},), asl), (nvar,), own=false)
+    uvar = unsafe_wrap(Array, @asl_call(:asl_uvar, Ptr{Cdouble}, (Ptr{Nothing},), asl), (nvar,), own=false)
 
     nzo = Int(@asl_call(:asl_nzo, Int32, (Ptr{Nothing},), asl))
     nbv = Int(@asl_call(:asl_nbv, Int32, (Ptr{Nothing},), asl))
@@ -66,10 +62,8 @@ mutable struct AmplModel <: AbstractNLPModel
     nlvoi = Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Nothing},), asl))
     nwv = Int(@asl_call(:asl_nwv, Int32, (Ptr{Nothing},), asl))
 
-    lcon = unsafe_wrap(Array, @asl_call(:asl_lcon, Ptr{Float64}, (Ptr{Nothing},), asl),
-                            (ncon,), own=false)
-    ucon = unsafe_wrap(Array, @asl_call(:asl_ucon, Ptr{Float64}, (Ptr{Nothing},), asl),
-                            (ncon,), own=false)
+    lcon = unsafe_wrap(Array, @asl_call(:asl_lcon, Ptr{Cdouble}, (Ptr{Nothing},), asl), (ncon,), own=false)
+    ucon = unsafe_wrap(Array, @asl_call(:asl_ucon, Ptr{Cdouble}, (Ptr{Nothing},), asl), (ncon,), own=false)
 
     nlnet = Int(@asl_call(:asl_lnc, Int32, (Ptr{Nothing},), asl))
     nnnet = Int(@asl_call(:asl_nlnc, Int32, (Ptr{Nothing},), asl))
@@ -120,8 +114,8 @@ function write_sol(nlp :: AmplModel, msg :: String, x :: AbstractVector, y :: Ab
   length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
 
   @asl_call(:asl_write_sol, Nothing,
-                    (Ptr{Nothing}, Ptr{UInt8}, Ptr{Float64}, Ptr{Float64}),
-                     nlp.__asl, msg,        x,            y)
+                    (Ptr{Nothing}, Ptr{UInt8}, Ptr{Cdouble}, Ptr{Cdouble}),
+                     nlp.__asl,    msg,        x,            y)
 end
 
 function amplmodel_finalize(nlp :: AmplModel)
@@ -147,57 +141,57 @@ end
 
 # Scaling AmplModel instances.
 
-function NLPModels.varscale(nlp :: AmplModel, s :: Vector{Float64})
+function NLPModels.varscale(nlp :: AmplModel, s :: Vector{Cdouble})
   @check_ampl_model
   length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
 
   err = Cint(0)
-  @asl_call(:asl_varscale, Nothing, (Ptr{Nothing}, Ptr{Float64}, Ref{Cint}), nlp.__asl, s, err)
+  @asl_call(:asl_varscale, Nothing, (Ptr{Nothing}, Ptr{Cdouble}, Ref{Cint}), nlp.__asl, s, err)
   err == 0 || throw(AmplException("Error while scaling variables"))
 end
 
-NLPModels.varscale(nlp :: AmplModel, s :: AbstractVector) = varscale(nlp, Vector{Float64}(s))
+NLPModels.varscale(nlp :: AmplModel, s :: AbstractVector) = varscale(nlp, Vector{Cdouble}(s))
 
 function NLPModels.lagscale(nlp :: AmplModel, σ :: Float64)
   @check_ampl_model
   err = Cint(0)
-  @asl_call(:asl_lagscale, Nothing, (Ptr{Nothing}, Float64, Ref{Cint}), nlp.__asl, σ, err)
+  @asl_call(:asl_lagscale, Nothing, (Ptr{Nothing}, Cdouble, Ref{Cint}), nlp.__asl, σ, err)
   err == 0 || throw(AmplException("Error while scaling Lagrangian"))
 end
 
-function NLPModels.conscale(nlp :: AmplModel, s :: Vector{Float64})
+function NLPModels.conscale(nlp :: AmplModel, s :: Vector{Cdouble})
   @check_ampl_model
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
   err = Cint(0)
-  @asl_call(:asl_conscale, Nothing, (Ptr{Nothing}, Ptr{Float64}, Ref{Cint}), nlp.__asl, s, err)
+  @asl_call(:asl_conscale, Nothing, (Ptr{Nothing}, Ptr{Cdouble}, Ref{Cint}), nlp.__asl, s, err)
   err == 0 || throw(AmplException("Error while scaling constraints"))
 end
 
-NLPModels.conscale(nlp :: AmplModel, s :: AbstractVector) = conscale(nlp, Vector{Float64}(s))
+NLPModels.conscale(nlp :: AmplModel, s :: AbstractVector) = conscale(nlp, Vector{Cdouble}(s))
 
 # Evaluating objective, constraints and derivatives.
 
-function NLPModels.obj(nlp :: AmplModel, x :: Vector{Float64})
+function NLPModels.obj(nlp :: AmplModel, x :: Vector{Cdouble})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Cint(0)
-  f = @asl_call(:asl_obj, Float64, (Ptr{Nothing}, Ptr{Float64}, Ref{Cint}), nlp.__asl, x, err)
+  f = @asl_call(:asl_obj, Float64, (Ptr{Nothing}, Ptr{Cdouble}, Ref{Cint}), nlp.__asl, x, err)
   nlp.counters.neval_obj += 1
   err == 0 || throw(AmplException("Error while evaluating objective"))
   return f
 end
 
-NLPModels.obj(nlp :: AmplModel, x :: AbstractVector) = obj(nlp, Vector{Float64}(x))
+NLPModels.obj(nlp :: AmplModel, x :: AbstractVector) = obj(nlp, Vector{Cdouble}(x))
 
-function NLPModels.grad!(nlp :: AmplModel, x :: Vector{Float64}, g :: Vector{Float64})
+function NLPModels.grad!(nlp :: AmplModel, x :: Vector{Cdouble}, g :: Vector{Cdouble})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Cint(0)
-  @asl_call(:asl_grad, Ptr{Float64},
-            (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Ref{Cint}),
+  @asl_call(:asl_grad, Nothing,
+            (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Ref{Cint}),
              nlp.__asl,    x,            g,            err)
   nlp.counters.neval_grad += 1
   err == 0 || throw(AmplException("Error while evaluating objective gradient"))
@@ -205,19 +199,19 @@ function NLPModels.grad!(nlp :: AmplModel, x :: Vector{Float64}, g :: Vector{Flo
 end
 
 function NLPModels.grad!(nlp :: AmplModel, x :: AbstractVector, g :: AbstractVector)
-  g_ = Vector{Float64}(undef, nlp.meta.nvar)
-  grad!(nlp, Vector{Float64}(x), g_)
+  g_ = Vector{Cdouble}(undef, nlp.meta.nvar)
+  grad!(nlp, Vector{Cdouble}(x), g_)
   g[1 : nlp.meta.nvar] .= g_
   return g
 end
 
-function NLPModels.cons!(nlp :: AmplModel, x :: Vector{Float64}, c :: Vector{Float64})
+function NLPModels.cons!(nlp :: AmplModel, x :: Vector{Cdouble}, c :: Vector{Cdouble})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Cint(0)
   @asl_call(:asl_cons, Nothing,
-            (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Ref{Cint}),
+            (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Ref{Cint}),
              nlp.__asl,    x,            c,            err)
   nlp.counters.neval_cons += 1
   err == 0 || throw(AmplException("Error while evaluating constraints"))
@@ -225,36 +219,36 @@ function NLPModels.cons!(nlp :: AmplModel, x :: Vector{Float64}, c :: Vector{Flo
 end
 
 function NLPModels.cons!(nlp :: AmplModel, x :: AbstractVector, c :: AbstractVector)
-  c_ = Vector{Float64}(undef, nlp.meta.ncon)
-  cons!(nlp, Vector{Float64}(x), c_)
+  c_ = Vector{Cdouble}(undef, nlp.meta.ncon)
+  cons!(nlp, Vector{Cdouble}(x), c_)
   c[1 : nlp.meta.ncon] .= c_
   return c
 end
 
-function NLPModels.jth_con(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
+function NLPModels.jth_con(nlp :: AmplModel, x :: Vector{Cdouble}, j :: Int)
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Cint(0)
   cj = @asl_call(:asl_jcon, Float64,
-                 (Ptr{Nothing}, Ptr{Float64}, Int32, Ref{Cint}),
+                 (Ptr{Nothing}, Ptr{Cdouble}, Int32, Ref{Cint}),
                   nlp.__asl,    x,            j-1,   err)
   nlp.counters.neval_jcon += 1
   err == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
   return cj
 end
 
-NLPModels.jth_con(nlp :: AmplModel, x :: AbstractVector, j :: Int) = jth_con(nlp, Vector{Float64}(x), j)
+NLPModels.jth_con(nlp :: AmplModel, x :: AbstractVector, j :: Int) = jth_con(nlp, Vector{Cdouble}(x), j)
 
-function NLPModels.jth_congrad!(nlp :: AmplModel, x :: Vector{Float64}, j :: Int, g :: Vector{Float64})
+function NLPModels.jth_congrad!(nlp :: AmplModel, x :: Vector{Cdouble}, j :: Int, g :: Vector{Cdouble})
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Cint(0)
-  @asl_call(:asl_jcongrad, Ptr{Float64},
-            (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Int32, Ref{Cint}),
+  @asl_call(:asl_jcongrad, Nothing,
+            (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Int32, Ref{Cint}),
              nlp.__asl,    x,            g,            j-1,   err)
   nlp.counters.neval_jgrad += 1
   err == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
@@ -262,13 +256,13 @@ function NLPModels.jth_congrad!(nlp :: AmplModel, x :: Vector{Float64}, j :: Int
 end
 
 function NLPModels.jth_congrad!(nlp :: AmplModel, x :: AbstractVector, j :: Int, g :: AbstractVector)
-  g_ = Vector{Float64}(undef, nlp.meta.nvar)
-  jth_congrad!(nlp, Vector{Float64}(x), j, g_)
+  g_ = Vector{Cdouble}(undef, nlp.meta.nvar)
+  jth_congrad!(nlp, Vector{Cdouble}(x), j, g_)
   g[1 : nlp.meta.nvar] .= g_
   return g
 end
 
-function NLPModels.jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j :: Int)
+function NLPModels.jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Cdouble}, j :: Int)
   @check_ampl_model
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -278,10 +272,10 @@ function NLPModels.jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j 
 
   err = Cint(0)
   inds = Vector{Cint}(undef, nnz)
-  vals = Vector{Float64}(undef, nnz)
+  vals = Vector{Cdouble}(undef, nnz)
   @asl_call(:asl_sparse_congrad, Nothing,
-            (Ptr{Nothing}, Ptr{Float64}, Int32, Ptr{Cint}, Ptr{Float64}, Ref{Cint}),
-             nlp.__asl, x,            j-1,   inds,      vals,         err)
+            (Ptr{Nothing}, Ptr{Cdouble}, Int32, Ptr{Cint}, Ptr{Cdouble}, Ref{Cint}),
+             nlp.__asl,    x,            j-1,   inds,      vals,         err)
   nlp.counters.neval_jgrad += 1
   err == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
   # Use 1-based indexing.
@@ -289,7 +283,7 @@ function NLPModels.jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Float64}, j 
   return sparsevec(inds, vals, nlp.meta.nvar)
 end
 
-NLPModels.jth_sparse_congrad(nlp :: AmplModel, x :: AbstractVector, j :: Int) = jth_sparse_congrad(nlp, Vector{Float64}(x), j)
+NLPModels.jth_sparse_congrad(nlp :: AmplModel, x :: AbstractVector, j :: Int) = jth_sparse_congrad(nlp, Vector{Cdouble}(x), j)
 
 function NLPModels.jac_structure!(nlp :: AmplModel, rows :: Vector{Cint}, cols :: Vector{Cint})
   @asl_call(:asl_jac_structure, Nothing,
@@ -318,7 +312,7 @@ function NLPModels.jac_coord!(nlp :: AmplModel, x :: Vector{Cdouble}, vals :: Ve
 
   err = Cint(0)
   @asl_call(:asl_jacval, Nothing,
-            (Ptr{Nothing}, Ptr{Float64}, Ptr{Cdouble}, Ref{Cint}),
+            (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Ref{Cint}),
              nlp.__asl,    x,            vals,         err)
   nlp.counters.neval_jac += 1
   err == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
@@ -338,7 +332,7 @@ function NLPModels.jprod!(nlp :: AmplModel,
                           Jv :: AbstractVector)
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jprod += 1
-  Jv[1:nlp.meta.ncon] = jac(nlp, Vector{Float64}(x)) * v
+  Jv[1:nlp.meta.ncon] = jac(nlp, Vector{Cdouble}(x)) * v
   return Jv
 end
 
@@ -348,7 +342,7 @@ function NLPModels.jtprod!(nlp :: AmplModel,
                            Jtv :: AbstractVector)
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jtprod += 1
-  Jtv[1:nlp.meta.nvar] = jac(nlp, Vector{Float64}(x))' * v
+  Jtv[1:nlp.meta.nvar] = jac(nlp, Vector{Cdouble}(x))' * v
   return Jtv
 end
 
@@ -368,9 +362,9 @@ function NLPModels.hprod!(nlp :: AmplModel,
     _ = obj(nlp, x) ; nlp.counters.neval_obj -= 1
     _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
   end
-  @asl_call(:asl_hprod, Ptr{Float64},
-            (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Float64),
-             nlp.__asl,    y,            v,            hv,           obj_weight);
+  @asl_call(:asl_hprod, Nothing,
+            (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Cdouble),
+             nlp.__asl,    y,            v,            hv,           obj_weight)
   nlp.counters.neval_hprod += 1
   return hv
 end
@@ -381,7 +375,7 @@ function NLPModels.hprod!(nlp :: AmplModel,
                           v :: AbstractVector,
                           hv :: AbstractVector;
                           obj_weight :: Float64=1.0)
-  hv_ = Vector{Float64}(undef, nlp.meta.nvar)
+  hv_ = Vector{Cdouble}(undef, nlp.meta.nvar)
   hprod!(nlp, x, Vector{Cdouble}(y), Vector{Cdouble}(v), hv_; obj_weight=obj_weight)
   hv[1 : nlp.meta.nvar] .= hv_
   return hv
@@ -389,25 +383,25 @@ end
 
 function NLPModels.jth_hprod!(nlp :: AmplModel,
                               x :: AbstractVector,
-                              v :: Vector{Float64},
+                              v :: Vector{Cdouble},
                               j :: Int,
-                              hv :: Vector{Float64})
+                              hv :: Vector{Cdouble})
   # Note: x is in fact not used in hprod.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
   length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
-  (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
+  (1 <= j <= nlp.meta.ncon)  || error("expected 1 ≤ j ≤ $(nlp.meta.ncon)")
 
   if nlp.safe
     if j == 0
-      _ = obj(nlp, Vector{Float64}(x)) ; nlp.counters.neval_obj -= 1
+      _ = obj(nlp, Vector{Cdouble}(x)) ; nlp.counters.neval_obj -= 1
     else
-      _ = cons(nlp, Vector{Float64}(x)) ; nlp.counters.neval_cons -= 1
+      _ = cons(nlp, Vector{Cdouble}(x)) ; nlp.counters.neval_cons -= 1
     end
   end
-  @asl_call(:asl_hvcompd, Ptr{Float64},
-            (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Int),
-             nlp.__asl,    v,            hv,           j-1);
+  @asl_call(:asl_hvcompd, Nothing,
+            (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Int),
+             nlp.__asl,    v,            hv,           j-1)
   nlp.counters.neval_jhprod += 1
   return hv
 end
@@ -417,17 +411,17 @@ function NLPModels.jth_hprod!(nlp :: AmplModel,
                               v :: AbstractVector,
                               j :: Int,
                               hv :: AbstractVector)
-  hv_ = Vector{Float64}(undef, nlp.meta.nvar)
-  jth_hprod!(nlp, x, Vector{Float64}(v), j, hv_)
+  hv_ = Vector{Cdouble}(undef, nlp.meta.nvar)
+  jth_hprod!(nlp, x, Vector{Cdouble}(v), j, hv_)
   hv[1 : nlp.meta.nvar] .= hv_
   return hv
 end
 
 function NLPModels.ghjvprod!(nlp :: AmplModel,
                              x :: AbstractVector,
-                             g :: Vector{Float64},
-                             v :: Vector{Float64},
-                             gHv :: Vector{Float64})
+                             g :: Vector{Cdouble},
+                             v :: Vector{Cdouble},
+                             gHv :: Vector{Cdouble})
   # Note: x is in fact not used.
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -437,10 +431,11 @@ function NLPModels.ghjvprod!(nlp :: AmplModel,
   if nlp.safe
     _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
   end
-  @asl_call(:asl_ghjvprod, Ptr{Float64},
-            (Ptr{Nothing}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
-             nlp.__asl,    g,            v,            gHv);
+  @asl_call(:asl_ghjvprod, Nothing,
+            (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}),
+             nlp.__asl,    g,            v,            gHv)
   nlp.counters.neval_hprod += nlp.meta.ncon
+  return gHv
 end
 
 function NLPModels.ghjvprod!(nlp :: AmplModel,
@@ -448,8 +443,8 @@ function NLPModels.ghjvprod!(nlp :: AmplModel,
                              g :: AbstractVector,
                              v :: AbstractVector,
                              gHv :: AbstractVector)
-  gHv_ = Vector{Float64}(undef, nlp.meta.nvar)
-  ghjvprod!(nlp, x, Vector{Float64}(x), Vector{Float64}(g), Vector{Float64}(v), gHv_)
+  gHv_ = Vector{Cdouble}(undef, nlp.meta.nvar)
+  ghjvprod!(nlp, x, Vector{Cdouble}(x), Vector{Cdouble}(g), Vector{Cdouble}(v), gHv_)
   gHv[1 : nlp.meta.var] .= gHv_
   return gHv
 end
@@ -490,7 +485,7 @@ function NLPModels.hess_coord!(nlp :: AmplModel,
   # end
 
   @asl_call(:asl_hessval, Nothing,
-            (Ptr{Nothing}, Ptr{Float64}, Float64,    Ptr{Cdouble}),
+            (Ptr{Nothing}, Ptr{Cdouble}, Cdouble,    Ptr{Cdouble}),
              nlp.__asl,    y,            obj_weight, vals)
   nlp.counters.neval_hess += 1
   return vals
