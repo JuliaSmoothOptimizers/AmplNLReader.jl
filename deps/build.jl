@@ -20,6 +20,11 @@ end
   push!(BinDeps.defaults, BinDeps.BuildProcess)
 end
 
+extra_cflags = ""
+@static if Base.Sys.isfreebsd()
+  extra_cflags = "-DS_IFREG=S_ISREG -DS_IFDIR=S_ISDIR"
+end
+
 provides(Sources,
          URI("http://netlib.org/ampl/solvers.tgz"),
          libasl,
@@ -41,7 +46,7 @@ provides(SimpleBuild,
             (@build_steps begin
               ChangeDirectory(srcdir)
               (@build_steps begin
-                `make -f makefile.u CC=gcc CFLAGS="-O -fPIC"`
+                `make -f makefile.u CC=gcc CFLAGS="-O -fPIC $extra_cflags"`
                 `g++ -fPIC -shared -I$srcdir -I$rcdir $aslinterface_src -Wl,$all_load amplsolver.a -Wl,$noall_load -o libasl.$so`
                 `mv libasl.$so $libdir`
               end)
