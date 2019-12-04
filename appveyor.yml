@@ -59,4 +59,5 @@ build_script:
   - C:\projects\julia\bin\julia -e "using Pkg; Pkg.clone(pwd(), \"AmplNLReader\"); Pkg.build(\"AmplNLReader\");"
 
 test_script:
+  - curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
   - C:\projects\julia\bin\julia -e "using Pkg; Pkg.test(\"AmplNLReader\")"
