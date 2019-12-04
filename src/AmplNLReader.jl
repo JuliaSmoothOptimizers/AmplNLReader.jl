@@ -9,8 +9,7 @@ using SparseArrays
 using Libdl
 using ASL_jll
 
-const libasl = joinpath(dirname(ASL_jll.libasl_path),
-                                "libasl" * (Sys.iswindows() ? "-0." : "." ) * dlext)
+const libasl = joinpath(dirname(ASL_jll.libasl_path), "libasl." * dlext)
 
 include("ampl_model.jl")
 
