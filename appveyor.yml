@@ -62,6 +62,4 @@ test_script:
   - C:\projects\julia\bin\julia -e "using Pkg; Pkg.test(\"AmplNLReader\")"
 
 on_finish:
-  - sh: export APPVEYOR_SSH_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAx0HbLR4j/JMWpRukZRZXqcnV2CNv33+K83rt4jxrQIZFapc8VuhQputsEk8JjTZHbgPfRc5Y0iLQkjPMp/E96rrzIEnaCKA+IXsrXkHokzMG2oym4DNPcTV5KW2Cs/UO3nOELLsqBSHCVW1iopAXqXyvQeY6bCQP/pFtXNsi53WIS5YRyAzG/4qDBk+o6DLelkrkQREbTWRb9AWDyNjfmMWNxSIi5D3hD8tfT+IZ8Tmm1dtyfzf9X9dB/w55Izp6Kb8aDKdwTHn7N/KRvj2Jta5DXijBzE8ejt3y+jEDvvObfMTfxsNGO3yMtUWUB97DHbN4MQp+Tq4vOgz+D01Z7w== dpo@pod.local"
-  - sh: export APPVEYOR_SSH_BLOCK=true
-  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
