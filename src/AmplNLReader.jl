@@ -6,11 +6,10 @@ using LinearAlgebra
 using NLPModels
 using SparseArrays
 
-if isfile(joinpath(dirname(@__FILE__),"..","deps","deps.jl"))
-  include("../deps/deps.jl")
-else
-  error("ASL library not properly installed. Please run Pkg.build(\"AmplNLReader\")")
-end
+using Libdl
+using ASL_jll
+
+const libasl = joinpath(dirname(ASL_jll.libasl_path), "libasl." * dlext)
 
 include("ampl_model.jl")
 
