@@ -145,27 +145,27 @@ function NLPModels.varscale(nlp :: AmplModel, s :: Vector{Cdouble})
   @check_ampl_model
   length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   @asl_call(:asl_varscale, Nothing, (Ptr{Nothing}, Ptr{Cdouble}, Ref{Cint}), nlp.__asl, s, err)
-  err == 0 || throw(AmplException("Error while scaling variables"))
+  err[] == 0 || throw(AmplException("Error while scaling variables"))
 end
 
 NLPModels.varscale(nlp :: AmplModel, s :: AbstractVector) = varscale(nlp, Vector{Cdouble}(s))
 
 function NLPModels.lagscale(nlp :: AmplModel, σ :: Float64)
   @check_ampl_model
-  err = Cint(0)
+  err = Ref{Cint}(0)
   @asl_call(:asl_lagscale, Nothing, (Ptr{Nothing}, Cdouble, Ref{Cint}), nlp.__asl, σ, err)
-  err == 0 || throw(AmplException("Error while scaling Lagrangian"))
+  err[] == 0 || throw(AmplException("Error while scaling Lagrangian"))
 end
 
 function NLPModels.conscale(nlp :: AmplModel, s :: Vector{Cdouble})
   @check_ampl_model
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   @asl_call(:asl_conscale, Nothing, (Ptr{Nothing}, Ptr{Cdouble}, Ref{Cint}), nlp.__asl, s, err)
-  err == 0 || throw(AmplException("Error while scaling constraints"))
+  err[] == 0 || throw(AmplException("Error while scaling constraints"))
 end
 
 NLPModels.conscale(nlp :: AmplModel, s :: AbstractVector) = conscale(nlp, Vector{Cdouble}(s))
@@ -176,10 +176,10 @@ function NLPModels.obj(nlp :: AmplModel, x :: Vector{Cdouble})
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   f = @asl_call(:asl_obj, Float64, (Ptr{Nothing}, Ptr{Cdouble}, Ref{Cint}), nlp.__asl, x, err)
   nlp.counters.neval_obj += 1
-  err == 0 || throw(AmplException("Error while evaluating objective"))
+  err[] == 0 || throw(AmplException("Error while evaluating objective"))
   return f
 end
 
@@ -189,12 +189,12 @@ function NLPModels.grad!(nlp :: AmplModel, x :: Vector{Cdouble}, g :: Vector{Cdo
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   @asl_call(:asl_grad, Nothing,
             (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Ref{Cint}),
              nlp.__asl,    x,            g,            err)
   nlp.counters.neval_grad += 1
-  err == 0 || throw(AmplException("Error while evaluating objective gradient"))
+  err[] == 0 || throw(AmplException("Error while evaluating objective gradient"))
   return g
 end
 
@@ -209,12 +209,12 @@ function NLPModels.cons!(nlp :: AmplModel, x :: Vector{Cdouble}, c :: Vector{Cdo
   @check_ampl_model
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   @asl_call(:asl_cons, Nothing,
             (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Ref{Cint}),
              nlp.__asl,    x,            c,            err)
   nlp.counters.neval_cons += 1
-  err == 0 || throw(AmplException("Error while evaluating constraints"))
+  err[] == 0 || throw(AmplException("Error while evaluating constraints"))
   return c
 end
 
@@ -230,12 +230,12 @@ function NLPModels.jth_con(nlp :: AmplModel, x :: Vector{Cdouble}, j :: Int)
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   cj = @asl_call(:asl_jcon, Float64,
                  (Ptr{Nothing}, Ptr{Cdouble}, Int32, Ref{Cint}),
                   nlp.__asl,    x,            j-1,   err)
   nlp.counters.neval_jcon += 1
-  err == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
+  err[] == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
   return cj
 end
 
@@ -246,12 +246,12 @@ function NLPModels.jth_congrad!(nlp :: AmplModel, x :: Vector{Cdouble}, j :: Int
   (1 <= j <= nlp.meta.ncon)  || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   @asl_call(:asl_jcongrad, Nothing,
             (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Int32, Ref{Cint}),
              nlp.__asl,    x,            g,            j-1,   err)
   nlp.counters.neval_jgrad += 1
-  err == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
+  err[] == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
   return g
 end
 
@@ -270,14 +270,14 @@ function NLPModels.jth_sparse_congrad(nlp :: AmplModel, x :: Vector{Cdouble}, j 
   nnz = @asl_call(:asl_sparse_congrad_nnz, Csize_t,
                   (Ptr{Nothing}, Cint), nlp.__asl, j-1)
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   inds = Vector{Cint}(undef, nnz)
   vals = Vector{Cdouble}(undef, nnz)
   @asl_call(:asl_sparse_congrad, Nothing,
             (Ptr{Nothing}, Ptr{Cdouble}, Int32, Ptr{Cint}, Ptr{Cdouble}, Ref{Cint}),
              nlp.__asl,    x,            j-1,   inds,      vals,         err)
   nlp.counters.neval_jgrad += 1
-  err == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
+  err[] == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
   # Use 1-based indexing.
   @. inds += Cint(1)
   return sparsevec(inds, vals, nlp.meta.nvar)
@@ -310,12 +310,12 @@ function NLPModels.jac_coord!(nlp :: AmplModel, x :: Vector{Cdouble}, vals :: Ve
 
   _ = cons(nlp, x) ; nlp.counters.neval_cons -= 1
 
-  err = Cint(0)
+  err = Ref{Cint}(0)
   @asl_call(:asl_jacval, Nothing,
             (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Ref{Cint}),
              nlp.__asl,    x,            vals,         err)
   nlp.counters.neval_jac += 1
-  err == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
+  err[] == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
   return vals
 end
 
