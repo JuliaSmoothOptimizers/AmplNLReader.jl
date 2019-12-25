@@ -19,6 +19,7 @@ matrix:
 branches:
   only:
     - master
+    - v0.5-branch
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/ # tags
 
 jobs:

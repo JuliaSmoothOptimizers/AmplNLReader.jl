@@ -75,6 +75,7 @@ notifications:
 branches:
   only:
     - master
+    - v0.5-branch
 
 skip_branch_with_pr: true
 
