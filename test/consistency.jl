@@ -1,6 +1,6 @@
 using NLPModels
 
-nlppath = joinpath(dirname(pathof(NLPModels)), "..", "test")
+nlppath = joinpath(dirname(pathof(NLPModels)), "..", "test", "problems")
 include(joinpath(nlppath, "consistency.jl"))
 testpath = dirname(@__FILE__)
 
