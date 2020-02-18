@@ -5,9 +5,9 @@ makedocs(
   doctest = true,
   linkcheck = true,
   strict = true,
-  assets = ["assets/style.css"],
   format = Documenter.HTML(
-              prettyurls = get(ENV, "CI", nothing) == "true"
+              prettyurls = get(ENV, "CI", nothing) == "true",
+              assets = ["assets/style.css"],
             ),
   sitename = "AmplNLReader.jl",
   pages = Any["Home" => "index.md",
@@ -15,8 +15,4 @@ makedocs(
               "Reference" => "reference.md"]
 )
 
-deploydocs(deps = nothing, make = nothing,
-  repo = "github.com/JuliaSmoothOptimizers/AmplNLReader.jl.git",
-  target = "build",
-  devbranch = "master"
-)
+deploydocs(repo = "github.com/JuliaSmoothOptimizers/AmplNLReader.jl.git")
