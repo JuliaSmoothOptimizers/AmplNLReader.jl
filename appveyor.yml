@@ -51,6 +51,10 @@ install:
 # Run installer silently, output to C:\projects\julia
   - C:\projects\julia-binary.exe /S /D=C:\projects\julia
 
+on_failure:
+  - sh: export APPVEYOR_SSH_BLOCK=true
+  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
 build_script:
   - set Path=%CD%\%MINGW_DIR%\bin;%Path%
   - g++ --version
