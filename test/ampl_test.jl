@@ -39,6 +39,22 @@ function exercise_ampl_model(nlp :: AmplModel)
   jac_coord!(nlp, xview, jvals)
   @test norm(sparse(jrows, jcols, jvals, nlp.meta.ncon, nlp.meta.nvar) - J) ≤ sqrt(eps()) * norm(J)
 
+  v = ones(nlp.meta.nvar)
+  v[1:2:end] .= -1
+  Jv = Vector{Float64}(undef, nlp.meta.ncon)
+  jprod!(nlp, xview, jrows, jcols, v, Jv)
+  @test norm(J * v - Jv) ≤ sqrt(eps()) * norm(Jv)
+
+  u = ones(nlp.meta.ncon)
+  u[1:2:end] .= -1
+  Jtu = Vector{Float64}(undef, nlp.meta.nvar)
+  jtprod!(nlp, xview, jrows, jcols, u, Jtu)
+  @test norm(J' * u - Jtu) ≤ sqrt(eps()) * norm(Jtu)
+
+  Jop = jac_op!(nlp, xview, jrows, jcols, Jv, Jtu)
+  @test norm(J * v - Jop * v) ≤ sqrt(eps()) * norm(J * v)
+  @test norm(J' * u - Jop' * u) ≤ sqrt(eps()) * norm(J' * u)
+
   jvals2 = Vector{Float64}(undef, 2 * nlp.meta.nnzj)
   jac_coord!(nlp, xview, @view jvals2[1:2:end])
   @test all(jvals .== jvals2[1:2:end])
