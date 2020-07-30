@@ -1,5 +1,9 @@
 # AmplNLReader.jl: A [Julia](http://julialang.org) interface to [AMPL](http://www.ampl.com)
 
+## How to Cite
+
+If you use AmplNLReader.jl in your work, please cite using the format given in [CITATION.bib](https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl/blob/master/CITATION.bib).
+
 ### Stable release [![Github release](https://img.shields.io/github/release/JuliaSmoothOptimizers/AmplNLReader.jl.svg)](https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl/releases/latest)
 
 - Documentation: [![Documentation](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaSmoothOptimizers.github.io/AmplNLReader.jl/stable)
