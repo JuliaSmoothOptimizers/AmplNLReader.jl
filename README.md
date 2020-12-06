@@ -12,24 +12,22 @@ If you use AmplNLReader.jl in your work, please cite using the format given in [
 
 - Documentation: [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaSmoothOptimizers.github.io/AmplNLReader.jl/latest)
 - Tests:
-    - [![Master Build Status](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl.svg?branch=master)](https://travis-ci.org/JuliaSmoothOptimizers/AmplNLReader.jl) (linux, macOS, Windows)
-    - [![Build status](https://ci.appveyor.com/api/projects/status/tvi3dng5dio174fi/branch/master?svg=true)](https://ci.appveyor.com/project/dpo/amplnlreader-jl/branch/master) (Windows / MinGW)
+    - ![CI](https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl/workflows/CI/badge.svg?branch=master) (Linux, macOS, Windows)
     - [![Build Status](https://api.cirrus-ci.com/github/JuliaSmoothOptimizers/AmplNLReader.jl.svg)](https://cirrus-ci.com/github/JuliaSmoothOptimizers/AmplNLReader.jl) (FreeBSD)
-    - [![Master Coverage Status](https://coveralls.io/repos/JuliaSmoothOptimizers/AmplNLReader.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaSmoothOptimizers/AmplNLReader.jl?branch=master)
+    - [![codecov](https://codecov.io/gh/JuliaSmoothOptimizers/AmplNLReader.jl/branch/master/graph/badge.svg?token=KwtSr5vCBr)](https://codecov.io/gh/JuliaSmoothOptimizers/AmplNLReader.jl)
 
 ## How to Install
 
-At the Julia prompt, clone this repository and build:
+At the Julia prompt,
 
 ````JULIA
-julia> Pkg.add("AmplNLReader")
-julia> Pkg.build("AmplNLReader")
+pkg> add AmplNLReader
 ````
 
 ## Testing
 
 ````JULIA
-julia> Pkg.test("AmplNLReader")
+pkg> test AmplNLReader
 ````
 
 ## Creating a Model
