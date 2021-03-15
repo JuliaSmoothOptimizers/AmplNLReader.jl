@@ -5,22 +5,19 @@ version = "0.8.1"
 [deps]
 ASL_jll = "ae81ac8f-d209-56e5-92de-9978fef736f9"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 ASL_jll = "^0.1.1"
-NLPModels = "0.12, 0.13"
+NLPModels = "0.14"
 julia = "^1.3.0"
 
 [extras]
-Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+NLPModelsTest = "7998695d-6960-4d3a-85c4-e1bceb8cd856"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Libdl", "LinearAlgebra", "SparseArrays", "Test", "Printf"]
+test = ["LinearAlgebra", "NLPModelsTest", "Test"]
