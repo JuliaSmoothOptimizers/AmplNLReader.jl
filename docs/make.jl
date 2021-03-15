@@ -3,7 +3,7 @@ using Documenter, AmplNLReader, NLPModels
 makedocs(
   modules = [AmplNLReader],
   doctest = true,
-  linkcheck = true,
+  linkcheck = false,
   strict = true,
   format = Documenter.HTML(
               prettyurls = get(ENV, "CI", nothing) == "true",
