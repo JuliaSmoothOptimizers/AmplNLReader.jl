@@ -2,7 +2,6 @@
 # D. Orban, Vancouver, April 2014.
 module AmplNLReader
 
-using LinearAlgebra
 using NLPModels
 using SparseArrays
 

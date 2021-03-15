@@ -1,10 +1,3 @@
-using Test
-using NLPModels
-using AmplNLReader
-using LinearAlgebra
-using Printf
-using SparseArrays
-
 function exercise_ampl_model(nlp :: AmplModel)
   show(stdout, nlp)
   print(stdout, nlp)
@@ -127,7 +120,7 @@ function exercise_ampl_model(nlp :: AmplModel)
   reset!(nlp)
 end
 
-path = dirname(@__FILE__)
+path = joinpath(dirname(@__FILE__), "problems")
 hs33 = AmplModel(joinpath(path, "hs033.nl"))
 rosenbrock = AmplModel(joinpath(path, "rosenbr.nl"))
 exercise_ampl_model(rosenbrock)
@@ -151,4 +144,3 @@ x = hs6min.meta.x0
 @test obj(hs6min, x) ≈ obj(hs6max, x)
 @test all(grad(hs6min, x) .≈ grad(hs6max, x))
 @test all(Matrix(hess(hs6min, x)) .≈ Matrix(hess(hs6max, x)))
-
