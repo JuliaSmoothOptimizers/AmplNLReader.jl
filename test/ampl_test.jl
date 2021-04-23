@@ -1,4 +1,4 @@
-function exercise_ampl_model(nlp :: AmplModel)
+function exercise_ampl_model(nlp::AmplModel)
   show(stdout, nlp)
   print(stdout, nlp)
 
@@ -9,16 +9,16 @@ function exercise_ampl_model(nlp :: AmplModel)
   conscale(nlp, @view dummy_conscaling[1:2:end])
   lagscale(nlp, 1.0)
 
-  f = obj( nlp, nlp.meta.x0)
+  f = obj(nlp, nlp.meta.x0)
   g = grad(nlp, nlp.meta.x0)
   c = cons(nlp, nlp.meta.x0)
-  J = jac( nlp, nlp.meta.x0)
+  J = jac(nlp, nlp.meta.x0)
 
   x = Vector{Cdouble}(undef, 2 * nlp.meta.nvar)
   x[1:2:end] .= nlp.meta.x0
   xview = @view x[1:2:end]
 
-  for j = 1 : nlp.meta.ncon
+  for j = 1:(nlp.meta.ncon)
     cj = jth_con(nlp, xview, j)
     @test cj == c[j]
     gj = jth_congrad(nlp, xview, j)
@@ -100,10 +100,10 @@ function exercise_ampl_model(nlp :: AmplModel)
 
   ghje = Vector{Float64}(undef, nlp.meta.ncon)
   y = zeros(nlp.meta.ncon)
-  for j = 1 : nlp.meta.ncon
+  for j = 1:(nlp.meta.ncon)
     Hje = jth_hprod(nlp, xview, e, j)
     y[j] = 1
-    H = hess(nlp, xview, y, obj_weight=0.0)
+    H = hess(nlp, xview, y, obj_weight = 0.0)
     @test norm(Hje - H * e) ≤ sqrt(eps()) * norm(Hje)
     y[j] = 0
     ghje[j] = dot(g, Hje)
