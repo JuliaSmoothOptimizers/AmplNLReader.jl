@@ -16,8 +16,8 @@ macro check_ampl_model()
   esc(:(nlp.__asl == C_NULL && throw(AmplException("Uninitialized AMPL model"))))
 end
 
-mutable struct AmplModel <: AbstractNLPModel
-  meta::NLPModelMeta     # Problem metadata.
+mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
+  meta::NLPModelMeta{Float64, Vector{Float64}}     # Problem metadata.
   __asl::Ptr{Nothing}        # Pointer to internal ASL structure. Do not touch.
 
   counters::Counters       # Evaluation counters
@@ -108,7 +108,7 @@ mutable struct AmplModel <: AbstractNLPModel
     nnzj = Int(@asl_call(:asl_nnzj, Int32, (Ptr{Nothing},), asl))
     nnzh = Int(@asl_call(:asl_nnzh, Int32, (Ptr{Nothing},), asl))
 
-    meta = NLPModelMeta(
+    meta = NLPModelMeta{Float64, Vector{Float64}}(
       nvar,
       x0 = x0,
       lvar = lvar,
