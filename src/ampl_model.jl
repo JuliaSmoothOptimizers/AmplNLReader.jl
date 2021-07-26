@@ -17,7 +17,7 @@ macro check_ampl_model()
 end
 
 mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
-  meta::NLPModelMeta{Float64, Vector{Float64}}     # Problem metadata.
+  meta::AmplNLPMeta     # Problem metadata.
   __asl::Ptr{Nothing}        # Pointer to internal ASL structure. Do not touch.
 
   counters::Counters       # Evaluation counters
@@ -108,7 +108,7 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
     nnzj = Int(@asl_call(:asl_nnzj, Int32, (Ptr{Nothing},), asl))
     nnzh = Int(@asl_call(:asl_nnzh, Int32, (Ptr{Nothing},), asl))
 
-    meta = NLPModelMeta{Float64, Vector{Float64}}(
+    meta = AmplNLPMeta(
       nvar,
       x0 = x0,
       lvar = lvar,
