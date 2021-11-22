@@ -35,16 +35,16 @@ function exercise_ampl_model(nlp::AmplModel)
   v = ones(nlp.meta.nvar)
   v[1:2:end] .= -1
   Jv = Vector{Float64}(undef, nlp.meta.ncon)
-  jprod!(nlp, xview, jrows, jcols, v, Jv)
+  jprod!(nlp, jrows, jcols, jvals, v, Jv)
   @test norm(J * v - Jv) ≤ sqrt(eps()) * norm(Jv)
 
   u = ones(nlp.meta.ncon)
   u[1:2:end] .= -1
   Jtu = Vector{Float64}(undef, nlp.meta.nvar)
-  jtprod!(nlp, xview, jrows, jcols, u, Jtu)
+  jtprod!(nlp, jrows, jcols, jvals, u, Jtu)
   @test norm(J' * u - Jtu) ≤ sqrt(eps()) * norm(Jtu)
 
-  Jop = jac_op!(nlp, xview, jrows, jcols, Jv, Jtu)
+  Jop = jac_op!(nlp, jrows, jcols, jvals, Jv, Jtu)
   @test norm(J * v - Jop * v) ≤ sqrt(eps()) * norm(J * v)
   @test norm(J' * u - Jop' * u) ≤ sqrt(eps()) * norm(J' * u)
 
