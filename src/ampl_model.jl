@@ -98,7 +98,6 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
     nlnet = Int(@asl_call(:asl_lnc, Int32, (Ptr{Nothing},), asl))
     nnnet = Int(@asl_call(:asl_nlnc, Int32, (Ptr{Nothing},), asl))
     nnln = Int(@asl_call(:asl_nlc, Int32, (Ptr{Nothing},), asl)) - nnnet
-    nlin = ncon - nnln - nnnet
 
     nln = 1:nnln
     nnet = (nnln + 1):(nnln + nnnet)
@@ -106,6 +105,14 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
     lin = (nnln + nnnet + nlnet + 1):ncon
 
     nnzj = Int(@asl_call(:asl_nnzj, Int32, (Ptr{Nothing},), asl))
+    lin_nnzj = 0
+    for j in lin
+      lin_nnzj += Cint(@asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), asl, j - 1))
+    end
+    nln_nnzj = 0
+    for j in nln
+      nln_nnzj += Cint(@asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), asl, j - 1))
+    end
     nnzh = Int(@asl_call(:asl_nnzh, Int32, (Ptr{Nothing},), asl))
 
     meta = AmplNLPMeta(
@@ -120,6 +127,8 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
       lcon = lcon,
       ucon = ucon,
       nnzj = nnzj,
+      lin_nnzj = lin_nnzj,
+      nln_nnzj = nln_nnzj,
       nnzh = nnzh,
       nbv = nbv,
       niv = niv,
@@ -134,8 +143,6 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
       nln = nln,
       nnet = nnet,
       lnet = lnet,
-      nlin = nlin,
-      nnln = nnln,
       nlnet = nlnet,
       minimize = minimize,
       islp = islp,
