@@ -107,11 +107,13 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
     nnzj = Int(@asl_call(:asl_nnzj, Int32, (Ptr{Nothing},), asl))
     lin_nnzj = 0
     for j in lin
-      lin_nnzj += Cint(@asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), asl, j - 1))
+      lin_nnzj +=
+        Cint(@asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), asl, j - 1))
     end
     nln_nnzj = 0
     for j in nln
-      nln_nnzj += Cint(@asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), asl, j - 1))
+      nln_nnzj +=
+        Cint(@asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), asl, j - 1))
     end
     nnzh = Int(@asl_call(:asl_nnzh, Int32, (Ptr{Nothing},), asl))
 
