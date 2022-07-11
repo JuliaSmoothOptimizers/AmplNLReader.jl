@@ -44,6 +44,8 @@ The following keyword arguments are accepted:
 - `ucon`: vector of constraint upper bounds
 - `nnzo`: number of nonzeros in all objectives gradients
 - `nnzj`: number of elements needed to store the nonzeros in the sparse Jacobian
+- `lin_nnzj`: number of elements needed to store the nonzeros in the sparse Jacobian of linear constraints
+- `nln_nnzj`: number of elements needed to store the nonzeros in the sparse Jacobian of nonlinear constraints
 - `nnzh`: number of elements needed to store the nonzeros in the sparse Hessian
 - `nlin`: number of linear constraints
 - `nnln`: number of nonlinear general constraints
@@ -95,6 +97,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
 
   nnzo::Int
   nnzj::Int
+  lin_nnzj::Int
+  nln_nnzj::Int
   nnzh::Int
 
   nlin::Int
@@ -132,13 +136,13 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     ucon::Vector{Float64} = fill!(Vector{Float64}(undef, ncon), Inf),
     nnzo = nvar,
     nnzj = nvar * ncon,
+    lin_nnzj = 0,
+    nln_nnzj = nvar * ncon,
     nnzh = nvar * (nvar + 1) / 2,
     lin = Int[],
     nln = 1:ncon,
     nnet = Int[],
     lnet = Int[],
-    nlin = length(lin),
-    nnln = length(nln),
     nnnet = length(nnet),
     nlnet = length(lnet),
     minimize = true,
@@ -152,8 +156,6 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
 
     @lencheck nvar x0 lvar uvar
     @lencheck ncon y0 lcon ucon
-    @lencheck nlin lin
-    @lencheck nnln nln
     @lencheck nnnet nnet
     @lencheck nlnet lnet
     @rangecheck 1 ncon lin nln nnet lnet
@@ -174,6 +176,9 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
 
     nnzj = max(0, nnzj)
     nnzh = max(0, nnzh)
+
+    nlin = length(lin)
+    nnln = length(nln)
 
     new(
       nvar,
@@ -207,6 +212,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
       jinf,
       nnzo,
       nnzj,
+      lin_nnzj,
+      nln_nnzj,
       nnzh,
       nlin,
       nnln,
