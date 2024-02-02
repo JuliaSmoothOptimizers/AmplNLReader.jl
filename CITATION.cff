@@ -11,10 +11,7 @@ authors:
   - given-names: Dominique
     family-names: Orban
     orcid: 'https://orcid.org/0000-0002-8017-7687'
-    affiliation: >-
-      GERAD and Department of Mathematics
-      and                   Industrial Engineering,
-      Polytechnique       Montréal,             QC, Canada
+    affiliation: 'GERAD and Department of Mathematics and Industrial Engineering, Polytechnique Montréal, QC, Canada'
     email: dominique.orban@gerad.ca
   - given-names: Abel
     family-names: Soares Siqueira
@@ -33,6 +30,5 @@ keywords:
   - Nonlinear programming
   - Julia
 license: MPL-2.0
-commit: 15165b0086abe9dd05b0ba34b3076ee5e20cb156
 version: 0.11.2
 date-released: '2022-01-07'
