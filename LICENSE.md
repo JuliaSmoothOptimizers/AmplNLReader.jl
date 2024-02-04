@@ -1,4 +1,4 @@
-Copyright (c) 2014-2019: Dominique Orban and Abel Soares Siqueira
+Copyright (c) 2014-present: Dominique Orban and Abel Soares Siqueira
 
 AmplNLReader.jl is licensed under the [MPL version 2.0](https://www.mozilla.org/MPL/2.0/).
 
