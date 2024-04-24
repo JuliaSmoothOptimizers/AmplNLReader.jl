@@ -3,14 +3,14 @@ using Documenter, AmplNLReader, NLPModels
 makedocs(
   modules = [AmplNLReader],
   doctest = true,
-  linkcheck = false,
-  strict = true,
-  format = Documenter.HTML(
-    prettyurls = get(ENV, "CI", nothing) == "true",
-    assets = ["assets/style.css"],
-  ),
+  linkcheck = true,
+  format = Documenter.HTML(assets = ["assets/style.css"],
+                           ansicolor = true,
+                           prettyurls = get(ENV, "CI", nothing) == "true"),
   sitename = "AmplNLReader.jl",
-  pages = Any["Home" => "index.md", "API" => "api.md", "Reference" => "reference.md"],
+  pages = Any["Home" => "index.md",
+              "API" => "api.md",
+              "Reference" => "reference.md"],
 )
 
 deploydocs(
