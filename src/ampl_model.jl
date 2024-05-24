@@ -148,7 +148,7 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
       nlnet = nlnet,
       minimize = minimize,
       islp = islp,
-      name = stub,
+      name = split(fname, ".")[1],  # do not include path or extension in model name
     )
 
     nlp = new(meta, asl, Counters(), safe)

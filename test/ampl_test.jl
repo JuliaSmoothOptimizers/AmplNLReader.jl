@@ -146,3 +146,4 @@ x = hs6min.meta.x0
 @test obj(hs6min, x) ≈ obj(hs6max, x)
 @test all(grad(hs6min, x) .≈ grad(hs6max, x))
 @test all(Matrix(hess(hs6min, x)) .≈ Matrix(hess(hs6max, x)))
+@test hs6min.meta.name == "hs6"
