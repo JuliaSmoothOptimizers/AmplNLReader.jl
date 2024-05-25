@@ -1,0 +1,16 @@
+[deps]
+ASL_jll = "ae81ac8f-d209-56e5-92de-9978fef736f9"
+Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
+NLPModelsModifiers = "e01155f1-5c6f-4375-a9d8-616dd036575f"
+NLPModelsTest = "7998695d-6960-4d3a-85c4-e1bceb8cd856"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+ASL_jll = "^0.1.1"
+NLPModels = "0.18"
+NLPModelsModifiers = "0.5"
+NLPModelsTest = "0.6"
