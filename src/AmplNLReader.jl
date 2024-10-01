@@ -12,5 +12,6 @@ const libasl = joinpath(dirname(ASL_jll.libasl_path), "libasl." * dlext)
 
 include("ampl_meta.jl")
 include("ampl_model.jl")
+include("ampl_mpec_model.jl")
 
 end  # Module AmplNLReader

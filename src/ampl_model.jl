@@ -81,6 +81,7 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
     nlvci = Int(@asl_call(:asl_nlvci, Int32, (Ptr{Nothing},), asl))
     nlvoi = Int(@asl_call(:asl_nlvoi, Int32, (Ptr{Nothing},), asl))
     nwv = Int(@asl_call(:asl_nwv, Int32, (Ptr{Nothing},), asl))
+    n_cc = Int(@asl_call(:asl_n_cc, Int32, (Ptr{Nothing},), asl))
 
     lcon = unsafe_wrap(
       Array,
@@ -94,6 +95,16 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
       (ncon,),
       own = false,
     )
+
+    if n_cc > 0
+      cvar = unsafe_wrap(Array, @asl_call(:asl_cvar, Ptr{Int32}, (Ptr{Nothing},), asl),(ncon,), own=false)
+      # Check complementarity constraints are well specified:
+      cc_cons = cvar .> 0
+      @assert all(isinf, ucon[cc_cons])
+      @assert all(isfinite, lcon[cc_cons])
+    else
+      cvar = Int[]
+    end
 
     nlnet = Int(@asl_call(:asl_lnc, Int32, (Ptr{Nothing},), asl))
     nnnet = Int(@asl_call(:asl_nlnc, Int32, (Ptr{Nothing},), asl))
@@ -148,6 +159,8 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
       nlnet = nlnet,
       minimize = minimize,
       islp = islp,
+      n_cc = n_cc,
+      cvar = cvar,
       name = split(fname, ".")[1],  # do not include path or extension in model name
     )
 
