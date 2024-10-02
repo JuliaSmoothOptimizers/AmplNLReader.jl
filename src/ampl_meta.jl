@@ -58,6 +58,8 @@ The following keyword arguments are accepted:
 - `minimize`: true if optimize == minimize
 - `nlo`: number of nonlinear objectives
 - `islp`: true if the problem is a linear program
+- `n_cc`: number of complementarity constraints
+- `cvar`: indices of variables appearing in complementarity constraints (0 if constraint is regular)
 - `name`: problem name
 """
 struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
@@ -114,6 +116,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
   minimize::Bool
   nlo::Int
   islp::Bool
+  n_cc::Int
+  cvar::Vector{Int}
   name::String
 
   function AmplNLPMeta(
@@ -148,6 +152,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     minimize = true,
     nlo = 1,
     islp = false,
+    n_cc = 0,
+    cvar = Int[],
     name = "Generic",
   )
     if (nvar < 1) || (ncon < 0)
@@ -159,6 +165,9 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     @lencheck nnnet nnet
     @lencheck nlnet lnet
     @rangecheck 1 ncon lin nln nnet lnet
+    if n_cc > 0
+        @lencheck ncon cvar
+    end
 
     ifix = findall(lvar .== uvar)
     ilow = findall((lvar .> -Inf) .& (uvar .== Inf))
@@ -226,6 +235,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
       minimize,
       nlo,
       islp,
+      n_cc,
+      cvar,
       name,
     )
   end
