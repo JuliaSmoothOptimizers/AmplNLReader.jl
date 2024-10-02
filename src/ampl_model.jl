@@ -27,7 +27,7 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
 
     # check that stub or stub.nl exists
     fname = basename(stub)
-    ext = occursin(".", fname) ? split(fname, '.')[2] : ""
+    ext = occursin(".", fname) ? split(fname, '.')[end] : ""
     if ext == "nl"
       isfile(stub) || throw(AmplException("cannot find $(stub)"))
     else
