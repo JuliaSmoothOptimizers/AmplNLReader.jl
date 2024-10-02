@@ -97,7 +97,12 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
     )
 
     if n_cc > 0
-      cvar = unsafe_wrap(Array, @asl_call(:asl_cvar, Ptr{Int32}, (Ptr{Nothing},), asl),(ncon,), own=false)
+      cvar = unsafe_wrap(
+        Array,
+        @asl_call(:asl_cvar, Ptr{Int32}, (Ptr{Nothing},), asl),
+        (ncon,),
+        own = false,
+      )
       # Check complementarity constraints are well specified:
       cc_cons = cvar .> 0
       @assert all(isinf, ucon[cc_cons])
