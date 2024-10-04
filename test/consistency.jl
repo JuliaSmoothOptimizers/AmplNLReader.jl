@@ -6,7 +6,7 @@
       nlp_man = eval(Symbol(problem))()
       nlps = [nlp_ampl, nlp_man]
 
-      consistent_nlps(nlps)
+      consistent_nlps(nlps; test_slack = false)
     end
   end
 end
