@@ -166,7 +166,7 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     @lencheck nlnet lnet
     @rangecheck 1 ncon lin nln nnet lnet
     if n_cc > 0
-        @lencheck ncon cvar
+      @lencheck ncon cvar
     end
 
     ifix = findall(lvar .== uvar)

@@ -61,7 +61,7 @@ function AmplMPECModel(mp::AmplModel)
   nnzj = NLPModels.get_nnzj(mp)
 
   # Check MPEC model has been formatted by Ampl.
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = ind_cc_cons[i]
     @assert isinf(uvar[cvar[ic]])
     @assert isinf(ucon[ic])
@@ -75,7 +75,7 @@ function AmplMPECModel(mp::AmplModel)
   # Reverse mapping
   cnt = 1
   ind_cc = zeros(Int, m)
-  for i in 1:m
+  for i = 1:m
     if cvar[i] > 0
       ind_cc[i] = cnt
       cnt += 1
@@ -89,7 +89,7 @@ function AmplMPECModel(mp::AmplModel)
   # Analyze sparsity pattern of complementarity constraints
   cnt = 1
   # Count number of nonzeroes in each row
-  Jccp = zeros(Int, n_cc+1)
+  Jccp = zeros(Int, n_cc + 1)
   # Terms Diag(x) * ∇g(x)
   for (i, j) in zip(rows, cols)
     if ind_cc[i] > 0
@@ -101,18 +101,18 @@ function AmplMPECModel(mp::AmplModel)
   nnzcc = sum(Jccp)
   # Cumsum nnz per row
   cnt = 1
-  for i in 1:n_cc
+  for i = 1:n_cc
     tmp = Jccp[i]
     Jccp[i] = cnt
     cnt += tmp
   end
-  Jccp[n_cc+1] = nnzcc + 1
+  Jccp[n_cc + 1] = nnzcc + 1
   # Column indexes
   Jccj = zeros(Int, nnzcc)
   # Stores position in original Jacobian (-1 if terms associated to Diag(g(x)))
   Jccv = zeros(Int, nnzcc)
   # Terms Diag(x) * ∇g(x)
-  for k in 1:nnzj
+  for k = 1:nnzj
     i, j = rows[k], cols[k]
     ic = ind_cc[i]
     if cvar[i] > 0
@@ -123,7 +123,7 @@ function AmplMPECModel(mp::AmplModel)
     end
   end
   # Terms Diag(g(x))
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = ind_cc_cons[i]
     dest = Jccp[i]
     Jccj[dest] = cvar[ic]
@@ -132,30 +132,30 @@ function AmplMPECModel(mp::AmplModel)
   end
   # Reorder Jccp
   last = 1
-  for i in 1:n_cc+1
+  for i = 1:(n_cc + 1)
     tmp = Jccp[i]
     Jccp[i] = last
     last = tmp
   end
 
   lcon_cc = fill(-Inf, n_cc)
-  ucon_cc = fill( 0.0, n_cc)
+  ucon_cc = fill(0.0, n_cc)
   # TODO: find a better initialization for complementarities' multipliers
   y0_cc = fill(0.0, n_cc)
 
   meta = NLPModels.NLPModelMeta(
     n;
-    lvar=lvar,
-    uvar=uvar,
-    x0=NLPModels.get_x0(mp),
+    lvar = lvar,
+    uvar = uvar,
+    x0 = NLPModels.get_x0(mp),
     y0 = [NLPModels.get_y0(mp); y0_cc],
-    nnzj=NLPModels.get_nnzj(mp) + nnzcc,
-    nnzh=NLPModels.get_nnzh(mp) + nnzcc - n_cc,
-    ncon=m + n_cc,
-    lcon=[lcon; lcon_cc],
-    ucon=[ucon; ucon_cc],
-    minimize=mp.meta.minimize,
-    name="MPEC-" * mp.meta.name,
+    nnzj = NLPModels.get_nnzj(mp) + nnzcc,
+    nnzh = NLPModels.get_nnzh(mp) + nnzcc - n_cc,
+    ncon = m + n_cc,
+    lcon = [lcon; lcon_cc],
+    ucon = [ucon; ucon_cc],
+    minimize = mp.meta.minimize,
+    name = "MPEC-" * mp.meta.name,
   )
 
   return AmplMPECModel(
@@ -197,7 +197,7 @@ function NLPModels.cons!(nlp::AmplMPECModel, x::AbstractVector, c::AbstractVecto
   NLPModels.cons!(nlp.mp, x, c_reg)
   c[1:m] .= c_reg
   # Evaluate complementarity constraints
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = nlp.ind_cc_cons[i]
     c[m + i] = (c[ic] - lcon[ic]) * (x[cvar[ic]] - lvar[cvar[ic]])
   end
@@ -221,8 +221,8 @@ function NLPModels.jac_structure!(
   # Sparsity pattern of complementarity constraints is encoded
   # in CSR format in (Jccp, Jccj)
   cnt = nnzj
-  for i in 1:n_cc
-    for k in nlp.Jccp[i]:nlp.Jccp[i+1]-1
+  for i = 1:n_cc
+    for k = nlp.Jccp[i]:(nlp.Jccp[i + 1] - 1)
       cnt += 1
       rows[cnt] = i + m
       cols[cnt] = nlp.Jccj[k]
@@ -232,11 +232,7 @@ function NLPModels.jac_structure!(
   return rows, cols
 end
 
-function NLPModels.jac_coord!(
-  nlp::AmplMPECModel,
-  x::AbstractVector,
-  vals::AbstractVector,
-)
+function NLPModels.jac_coord!(nlp::AmplMPECModel, x::AbstractVector, vals::AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.nnzj vals
 
@@ -259,14 +255,14 @@ function NLPModels.jac_coord!(
   cvar = nlp.mp.meta.cvar
   v = nlp.buffer_c1
   Jv = nlp.buffer_vars
-  for i in 1:n_cc
+  for i = 1:n_cc
     fill!(v, 0.0)
     fill!(Jv, 0.0)
     ic = nlp.ind_cc_cons[i]
     v[ic] = 1.0
     NLPModels.jtprod!(nlp.mp, x, v, Jv)
     # Unpack Jv
-    for k in nlp.Jccp[i]:nlp.Jccp[i+1]-1
+    for k = nlp.Jccp[i]:(nlp.Jccp[i + 1] - 1)
       cnt += 1
       j = nlp.Jccj[k]
       if nlp.Jccv[k] >= 1
@@ -305,7 +301,7 @@ function NLPModels.jprod!(
   # Add contribution of complementarity constraints
   c = nlp.buffer_c2
   NLPModels.cons!(nlp.mp, x, c)
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = nlp.ind_cc_cons[i]
     xj = x[cvar[ic]] - lvar[cvar[ic]]
     Jv[m + i] = Jv[ic] * xj + (c[ic] - lcon[ic]) * v[cvar[ic]]
@@ -332,7 +328,7 @@ function NLPModels.jtprod!(
 
   v_buf = nlp.buffer_c1
   v_buf .= @view v[1:m]
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = nlp.ind_cc_cons[i]
     v_buf[ic] += (x[cvar[ic]] - lvar[cvar[ic]])
   end
@@ -341,18 +337,14 @@ function NLPModels.jtprod!(
   # Add contribution of complementarity constraints
   c = nlp.buffer_c2
   NLPModels.cons!(nlp.mp, x, c)
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = nlp.ind_cc_cons[i]
     Jtv[cvar[ic]] += (c[ic] - lcon[ic])
   end
   return Jtv
 end
 
-function NLPModels.hess_structure!(
-  nlp::AmplMPECModel,
-  hrows::AbstractVector,
-  hcols::AbstractVector,
-)
+function NLPModels.hess_structure!(nlp::AmplMPECModel, hrows::AbstractVector, hcols::AbstractVector)
   n = NLPModels.get_nvar(nlp.mp)
   n_cc = nlp.mp.meta.n_cc
   cvar = nlp.mp.meta.cvar
@@ -364,9 +356,9 @@ function NLPModels.hess_structure!(
   cnt = nnzh
   # Add complementarity contributions ∇g(x)' ∇h(x) + ∇h(x)' ∇g(x)
   # with h(x) := x[cvar[icc]]
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = nlp.ind_cc_cons[i]
-    for k in nlp.Jccp[i]:nlp.Jccp[i+1]-1
+    for k = nlp.Jccp[i]:(nlp.Jccp[i + 1] - 1)
       j = nlp.Jccj[k]
       # Only store lower-triangular entries
       if nlp.Jccv[k] >= 1
@@ -386,14 +378,14 @@ function NLPModels.hess_structure!(
 end
 
 function NLPModels.hess_coord!(
-    nlp::AmplMPECModel,
-    x::AbstractVector,
-    vals::AbstractVector;
-    obj_weight::Real=one(eltype(x)),
+  nlp::AmplMPECModel,
+  x::AbstractVector,
+  vals::AbstractVector;
+  obj_weight::Real = one(eltype(x)),
 )
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.nnzh vals
-  NLPModels.hess_coord!(nlp.mp, x, vals; obj_weight=obj_weight)
+  NLPModels.hess_coord!(nlp.mp, x, vals; obj_weight = obj_weight)
   return vals
 end
 
@@ -402,7 +394,7 @@ function NLPModels.hess_coord!(
   x::AbstractVector,
   y::AbstractVector,
   vals::AbstractVector;
-  obj_weight::Real=one(eltype(x)),
+  obj_weight::Real = one(eltype(x)),
 )
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.ncon y
@@ -416,19 +408,19 @@ function NLPModels.hess_coord!(
 
   y_buf = nlp.buffer_c1
   y_buf .= @view y[1:m]
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = nlp.ind_cc_cons[i]
     y_buf[ic] += y[m + i] * (x[cvar[ic]] - lvar[cvar[ic]])
   end
-  NLPModels.hess_coord!(nlp.mp, x, y_buf, vals; obj_weight=obj_weight)
+  NLPModels.hess_coord!(nlp.mp, x, y_buf, vals; obj_weight = obj_weight)
   # Add complementarity contributions
   jac_buf = nlp.buffer_jac
   NLPModels.jac_coord!(nlp.mp, x, jac_buf)
   cnt = nnzh
-  for i in 1:n_cc
+  for i = 1:n_cc
     ic = nlp.ind_cc_cons[i]
     mul_i = y[m + i]
-    for k in nlp.Jccp[i]:nlp.Jccp[i+1]-1
+    for k = nlp.Jccp[i]:(nlp.Jccp[i + 1] - 1)
       j = nlp.Jccj[k]
       if nlp.Jccv[k] >= 1
         if cvar[ic] >= j
@@ -442,4 +434,3 @@ function NLPModels.hess_coord!(
   end
   return vals
 end
-
