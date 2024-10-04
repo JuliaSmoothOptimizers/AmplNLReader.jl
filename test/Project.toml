@@ -11,6 +11,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 ASL_jll = "^0.1.1"
-NLPModels = "0.19"
+NLPModels = "0.20"
 NLPModelsModifiers = "0.7"
 NLPModelsTest = "0.9"
