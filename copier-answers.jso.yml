@@ -1,0 +1,8 @@
+PackageName: "AmplNLReader"
+PackageOwner: "JuliaSmoothOptimizers"
+PackageUUID: "77dd3d4c-cb1d-5e09-9340-85030ff7ba66"
+_src_path: "https://github.com/JuliaSmoothOptimizers/JSOBestieTemplate.jl"
+_commit: "v0.13.0"
+AddBreakage: true
+AddBenchmark: false
+AddBenchmarkCI: true
