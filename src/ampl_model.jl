@@ -322,6 +322,36 @@ end
 
 NLPModels.jth_con(nlp::AmplModel, x::AbstractVector, j::Int) = jth_con(nlp, Vector{Cdouble}(x), j)
 
+function NLPModels.cons_lin!(nlp::AmplModel, x::AbstractVector, c::AbstractVector)
+  @check_ampl_model 
+  length(c) >= nlp.meta.nlin || error("x must have length at least $(nlp.meta.nlin)")
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
+  k = 1
+  for j in nlp.meta.lin
+    c[k] = jth_con(nlp, x, j)
+    k += 1
+    nlp.counters.neval_jcon -= 1
+  end
+  nlp.counters.neval_cons_lin += 1
+  return c
+end
+
+function NLPModels.cons_nln!(nlp::AmplModel, x::AbstractVector, c::AbstractVector)
+  @check_ampl_model 
+  length(c) >= nlp.meta.nnln || error("x must have length at least $(nlp.meta.nnln)")
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+
+  k = 1
+  for j in nlp.meta.nln
+    c[k] = jth_con(nlp, x, j)
+    k += 1
+    nlp.counters.neval_jcon -= 1
+  end
+  nlp.counters.neval_cons_nln += 1
+  return c
+end
+
 function NLPModels.jth_congrad!(nlp::AmplModel, x::Vector{Cdouble}, j::Int, g::Vector{Cdouble})
   check_ampl_model(nlp)
   (1 <= j <= nlp.meta.ncon) || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
@@ -398,6 +428,143 @@ function NLPModels.jac_structure!(
   return rows, cols
 end
 
+#=
+function _jac_structure(nlp)
+  rows = Vector{Cint}(undef, nlp.meta.nnzj)
+  cols = Vector{Cint}(undef, nlp.meta.nnzj)
+  @asl_call(
+    :asl_jac_structure,
+    Nothing,
+    (Ptr{Nothing}, Ptr{Int32}, Ptr{Int32}),
+    nlp.__asl,
+    rows,
+    cols
+  )
+  # Use 1-based indexing.
+  @. rows[1:(nlp.meta.nnzj)] += Cint(1)
+  @. cols[1:(nlp.meta.nnzj)] += Cint(1)
+  return rows, cols
+end
+=#
+
+###########################################################################################
+
+function NLPModels.jac_lin_structure!(
+  nlp::AmplModel,
+  rows::AbstractVector{<:Integer},
+  cols::AbstractVector{<:Integer},
+)
+  # rows_ = Vector{Cint}(undef, nlp.meta.lin_nnzj)
+  # cols_ = Vector{Cint}(undef, nlp.meta.lin_nnzj)
+
+  #=
+  for j in nlp.meta.lin
+    nnzj = Cint(@asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), nlp.__asl, j - 1))
+    # How to get the structure separately?
+    # jth_congrad!(nlp, x, j, g::AbstractVector)
+  end
+  =#
+  
+  rows_, cols_ = jac_structure(nlp)
+  k = 1
+  for i =1:nlp.meta.nnzj
+    if rows_[i] in nlp.meta.lin
+      rows[k] = findfirst(x -> x == rows_[i], nlp.meta.lin) # __rows[i] - nlp.meta.nnln
+      cols[k] = cols_[i]
+      k+=1
+    end
+  end
+
+  return rows, cols
+end
+
+function NLPModels.jac_lin_coord!(
+  nlp::AmplModel,
+  x::AbstractVector,
+  vals::AbstractVector{<:AbstractFloat},
+)
+#=
+  vals_ = Vector{Cdouble}(undef, nlp.meta.lin_nnzj)
+
+  for j in nlp.meta.lin
+    nnzj = @asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), asl, j - 1)
+    # How to get the structure separately?
+    # jth_congrad!(nlp, x, j, g::AbstractVector)
+  end
+=#
+
+  rows_, cols_ = jac_structure(nlp)
+  __vals = jac_coord(nlp, x)
+  nlp.counters.neval_jac -= 1
+  k = 1
+  for i =1:nlp.meta.nnzj
+    if rows_[i] in nlp.meta.lin
+      vals[k] = __vals[i]
+      k+=1
+    end
+  end
+  nlp.counters.neval_jac_lin += 1
+
+  return vals
+end
+
+function NLPModels.jac_nln_structure!(
+  nlp::AmplModel,
+  rows::AbstractVector{<:Integer},
+  cols::AbstractVector{<:Integer},
+)
+  #=
+  for j in nlp.meta.nln
+    nnzj = @asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), nlp.__asl, j - 1)
+    # How to get the structure separately?
+    # jth_congrad!(nlp, x, j, g::AbstractVector)
+  end
+  =#
+
+  rows_, cols_ = jac_structure(nlp)
+  k = 1
+  for i =1:nlp.meta.nnzj
+    if rows_[i] in nlp.meta.nln
+      rows[k] = findfirst(x -> x == rows_[i], nlp.meta.nln) # __rows[i]
+      cols[k] = cols_[i]
+      k+=1
+    end
+  end
+
+  return rows, cols
+end
+
+function NLPModels.jac_nln_coord!(
+  nlp::AmplModel,
+  x::AbstractVector,
+  vals::AbstractVector{<:AbstractFloat},
+)
+#=
+  vals_ = Vector{Cdouble}(undef, nlp.meta.nln_nnzj)
+
+  for j in nlp.meta.nln
+    nnzj = @asl_call(:asl_sparse_congrad_nnz, Csize_t, (Ptr{Nothing}, Cint), asl, j - 1)
+    # How to get the structure separately?
+    # jth_congrad!(nlp, x, j, g::AbstractVector)
+  end
+=#
+  rows_, cols_ = jac_structure(nlp)
+  __vals = jac_coord(nlp, x)
+  nlp.counters.neval_jac -= 1
+  k = 1
+  for i =1:nlp.meta.nnzj
+    if rows_[i] in nlp.meta.nln
+      vals[k] = __vals[i]
+      k+=1
+    end
+  end
+  nlp.counters.neval_jac_nln += 1
+
+  return vals
+end
+
+###########################################################################################
+
 function NLPModels.jac_coord!(nlp::AmplModel, x::Vector{Cdouble}, vals::Vector{Cdouble})
   check_ampl_model(nlp)
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
@@ -428,10 +595,17 @@ function NLPModels.jac_coord!(
   return vals
 end
 
-function NLPModels.jprod!(nlp::AmplModel, x::AbstractVector, v::AbstractVector, Jv::AbstractVector)
-  nlp.counters.neval_jac -= 1
-  nlp.counters.neval_jprod += 1
-  Jv[1:(nlp.meta.ncon)] = jac(nlp, Vector{Cdouble}(x)) * v
+function NLPModels.jprod_lin!(nlp::AmplModel, x::AbstractVector, v::AbstractVector, Jv::AbstractVector)
+  nlp.counters.neval_jac_lin -= 1
+  nlp.counters.neval_jprod_lin += 1
+  Jv[1:(nlp.meta.nlin)] = jac_lin(nlp, Vector{Cdouble}(x)) * v
+  return Jv
+end
+
+function NLPModels.jprod_nln!(nlp::AmplModel, x::AbstractVector, v::AbstractVector, Jv::AbstractVector)
+  nlp.counters.neval_jac_nln -= 1
+  nlp.counters.neval_jprod_nln += 1
+  Jv[1:(nlp.meta.nnln)] = jac_nln(nlp, Vector{Cdouble}(x)) * v
   return Jv
 end
 
@@ -444,6 +618,30 @@ function NLPModels.jtprod!(
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jtprod += 1
   Jtv[1:(nlp.meta.nvar)] = jac(nlp, Vector{Cdouble}(x))' * v
+  return Jtv
+end
+
+function NLPModels.jtprod_lin!(
+  nlp::AmplModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jtv::AbstractVector,
+)
+  nlp.counters.neval_jac_lin -= 1
+  nlp.counters.neval_jtprod_lin += 1
+  Jtv[1:(nlp.meta.nvar)] = jac_lin(nlp, Vector{Cdouble}(x))' * v
+  return Jtv
+end
+
+function NLPModels.jtprod_nln!(
+  nlp::AmplModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jtv::AbstractVector,
+)
+  nlp.counters.neval_jac_nln -= 1
+  nlp.counters.neval_jtprod_nln += 1
+  Jtv[1:(nlp.meta.nvar)] = jac_nln(nlp, Vector{Cdouble}(x))' * v
   return Jtv
 end
 
