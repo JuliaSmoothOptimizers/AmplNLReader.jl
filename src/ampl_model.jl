@@ -450,6 +450,50 @@ end
 function NLPModels.hprod!(
   nlp::AmplModel,
   x::AbstractVector,
+  v::Vector{Cdouble},
+  hv::Vector{Cdouble};
+  obj_weight::Float64 = 1.0,
+)
+  # Note: x is in fact not used in hprod.
+  @check_ampl_model
+  length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
+  length(v) >= nlp.meta.nvar || error("v must have length at least $(nlp.meta.nvar)")
+
+  if nlp.safe
+    _ = obj(nlp, x)
+    nlp.counters.neval_obj -= 1
+    _ = cons(nlp, x)
+    nlp.counters.neval_cons -= 1
+  end
+  @asl_call(
+    :asl_hprod,
+    Nothing,
+    (Ptr{Nothing}, Ptr{Cdouble}, Ptr{Cdouble}, Cdouble),
+    nlp.__asl,
+    v,
+    hv,
+    obj_weight
+  )
+  nlp.counters.neval_hprod += 1
+  return hv
+end
+
+function NLPModels.hprod!(
+  nlp::AmplModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  hv::AbstractVector;
+  obj_weight::Float64 = 1.0,
+)
+  hv_ = Vector{Cdouble}(undef, nlp.meta.nvar)
+  hprod!(nlp, x,Vector{Cdouble}(v), hv_; obj_weight = obj_weight)
+  hv[1:(nlp.meta.nvar)] .= hv_
+  return hv
+end
+
+function NLPModels.hprod!(
+  nlp::AmplModel,
+  x::AbstractVector,
   y::Vector{Cdouble},
   v::Vector{Cdouble},
   hv::Vector{Cdouble};
