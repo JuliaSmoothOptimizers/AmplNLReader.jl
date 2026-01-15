@@ -1,5 +1,8 @@
 export AmplModel, AmplException, write_sol, amplmodel_finalize
 
+# Import methods we override.
+import Base.show, Base.print
+
 struct AmplException
   msg::String
 end
@@ -21,75 +24,40 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
       isfile("$(stub).nl") || throw(AmplException("cannot find $(stub).nl"))
     end
 
-    asl = @ccall libasl.asl_init(stub::Ptr{UInt8})::Ptr{Cvoid}
+    asl = asl_init(stub)
     (asl == C_NULL) && error("Error allocating ASL structure")
 
-    minimize = (@ccall libasl.asl_objtype(asl::Ptr{Cvoid})::Cint) == 0
-    islp = (@ccall libasl.asl_islp(asl::Ptr{Cvoid})::Cint) != 0
+    minimize = asl_objtype(asl) == 0
+    islp = asl_islp(asl) != 0
 
-    nlo = (@ccall libasl.asl_nlo(asl::Ptr{Cvoid})::Cint) |> Int
+    nlo = asl_nlo(asl) |> Int
 
-    nvar = (@ccall libasl.asl_nvar(asl::Ptr{Cvoid})::Cint) |> Int
-    ncon = (@ccall libasl.asl_ncon(asl::Ptr{Cvoid})::Cint) |> Int
+    nvar = asl_nvar(asl) |> Int
+    ncon = asl_ncon(asl) |> Int
 
-    x0 = unsafe_wrap(
-      Array,
-      (@ccall libasl.asl_x0(asl::Ptr{Cvoid})::Ptr{Cdouble}),
-      (nvar,),
-      own = false,
-    )
-    y0 = unsafe_wrap(
-      Array,
-      (@ccall libasl.asl_y0(asl::Ptr{Cvoid})::Ptr{Cdouble}),
-      (ncon,),
-      own = false,
-    )
+    x0 = unsafe_wrap(Array, asl_x0(asl), (nvar,), own = false)
+    y0 = unsafe_wrap(Array, asl_y0(asl), (ncon,), own = false)
 
-    lvar = unsafe_wrap(
-      Array,
-      (@ccall libasl.asl_lvar(asl::Ptr{Cvoid})::Ptr{Cdouble}),
-      (nvar,),
-      own = false,
-    )
-    uvar = unsafe_wrap(
-      Array,
-      (@ccall libasl.asl_uvar(asl::Ptr{Cvoid})::Ptr{Cdouble}),
-      (nvar,),
-      own = false,
-    )
+    lvar = unsafe_wrap(Array, asl_lvar(asl), (nvar,), own = false)
+    uvar = unsafe_wrap(Array, asl_uvar(asl), (nvar,), own = false)
 
-    nzo = (@ccall libasl.asl_nzo(asl::Ptr{Cvoid})::Cint) |> Int
-    nbv = (@ccall libasl.asl_nbv(asl::Ptr{Cvoid})::Cint) |> Int
-    niv = (@ccall libasl.asl_niv(asl::Ptr{Cvoid})::Cint) |> Int
-    nlvb = (@ccall libasl.asl_nlvb(asl::Ptr{Cvoid})::Cint) |> Int
-    nlvo = (@ccall libasl.asl_nlvo(asl::Ptr{Cvoid})::Cint) |> Int
-    nlvc = (@ccall libasl.asl_nlvc(asl::Ptr{Cvoid})::Cint) |> Int
-    nlvbi = (@ccall libasl.asl_nlvbi(asl::Ptr{Cvoid})::Cint) |> Int
-    nlvci = (@ccall libasl.asl_nlvci(asl::Ptr{Cvoid})::Cint) |> Int
-    nlvoi = (@ccall libasl.asl_nlvoi(asl::Ptr{Cvoid})::Cint) |> Int
-    nwv = (@ccall libasl.asl_nwv(asl::Ptr{Cvoid})::Cint) |> Int
-    n_cc = (@ccall libasl.asl_n_cc(asl::Ptr{Cvoid})::Cint) |> Int
+    nzo = asl_nzo(asl) |> Int
+    nbv = asl_nbv(asl) |> Int
+    niv = asl_niv(asl) |> Int
+    nlvb = asl_nlvb(asl) |> Int
+    nlvo = asl_nlvo(asl) |> Int
+    nlvc = asl_nlvc(asl) |> Int
+    nlvbi = asl_nlvbi(asl) |> Int
+    nlvci = asl_nlvci(asl) |> Int
+    nlvoi = asl_nlvoi(asl) |> Int
+    nwv = asl_nwv(asl) |> Int
+    n_cc = asl_n_cc(asl) |> Int
 
-    lcon = unsafe_wrap(
-      Array,
-      (@ccall libasl.asl_lcon(asl::Ptr{Cvoid})::Ptr{Cdouble}),
-      (ncon,),
-      own = false,
-    )
-    ucon = unsafe_wrap(
-      Array,
-      (@ccall libasl.asl_ucon(asl::Ptr{Cvoid})::Ptr{Cdouble}),
-      (ncon,),
-      own = false,
-    )
+    lcon = unsafe_wrap(Array, asl_lcon(asl), (ncon,), own = false)
+    ucon = unsafe_wrap(Array, asl_ucon(asl), (ncon,), own = false)
 
     if n_cc > 0
-      cvar = unsafe_wrap(
-        Array,
-        (@ccall libasl.asl_cvar(asl::Ptr{Cvoid})::Ptr{Cint}),
-        (ncon,),
-        own = false,
-      )
+      cvar = unsafe_wrap(Array, asl_cvar(asl), (ncon,), own = false)
 
       # Check complementarity constraints are well specified:
       cc_cons = cvar .> 0
@@ -99,27 +67,25 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
       cvar = Int[]
     end
 
-    nlnet = (@ccall libasl.asl_lnc(asl::Ptr{Cvoid})::Cint) |> Int
-    nnnet = (@ccall libasl.asl_nlnc(asl::Ptr{Cvoid})::Cint) |> Int
-    nnln = ((@ccall libasl.asl_nlc(asl::Ptr{Cvoid})::Cint) |> Int) - nnnet
+    nlnet = asl_lnc(asl) |> Int
+    nnnet = asl_nlnc(asl) |> Int
+    nnln = (asl_nlc(asl) |> Int) - nnnet
 
     nln = 1:nnln
     nnet = (nnln + 1):(nnln + nnnet)
     lnet = (nnln + nnnet + 1):(nnln + nnnet + nlnet)
     lin = (nnln + nnnet + nlnet + 1):ncon
 
-    nnzj = (@ccall libasl.asl_nnzj(asl::Ptr{Cvoid})::Cint) |> Int
+    nnzj = asl_nnzj(asl) |> Int
     lin_nnzj = 0
     for j in lin
-      lin_nnzj +=
-        (@ccall libasl.asl_sparse_congrad_nnz(asl::Ptr{Cvoid}, (j - 1)::Cint)::Csize_t) |> Cint
+      lin_nnzj += asl_sparse_congrad_nnz(asl, j-1) |> Cint
     end
     nln_nnzj = 0
     for j in nln
-      nln_nnzj +=
-        (@ccall libasl.asl_sparse_congrad_nnz(asl::Ptr{Cvoid}, (j - 1)::Cint)::Csize_t) |> Cint
+      nln_nnzj += asl_sparse_congrad_nnz(asl, j-1) |> Cint
     end
-    nnzh = (@ccall libasl.asl_nnzh(asl::Ptr{Cvoid})::Cint) |> Int
+    nnzh = (asl_nnzh(asl)) |> Int
 
     meta = AmplNLPMeta(
       nvar,
@@ -168,9 +134,6 @@ function check_ampl_model(nlp::AmplModel)
   (nlp.__asl == C_NULL) && throw(AmplException("Uninitialized AMPL model"))
 end
 
-# Import methods we override.
-import Base.show, Base.print
-
 # Methods associated to AmplModel instances.
 
 function NLPModels.reset!(nlp::AmplModel)
@@ -183,17 +146,12 @@ function write_sol(nlp::AmplModel, msg::String, x::AbstractVector, y::AbstractVe
   length(x) == nlp.meta.nvar || error("x must have length $(nlp.meta.nvar)")
   length(y) == nlp.meta.ncon || error("y must have length $(nlp.meta.ncon)")
 
-  @ccall libasl.asl_write_sol(
-    nlp.__asl::Ptr{Cvoid},
-    msg::Ptr{UInt8},
-    x::Ptr{Cdouble},
-    y::Ptr{Cdouble},
-  )::Cvoid
+  asl_write_sol(nlp.__asl, msg, x, y)
 end
 
 function amplmodel_finalize(nlp::AmplModel)
   if nlp.__asl != C_NULL
-    @ccall libasl.asl_finalize(nlp.__asl::Ptr{Cvoid})::Cvoid
+    asl_finalize(nlp.__asl)::Cvoid
     nlp.__asl = C_NULL
   end
   return
@@ -218,7 +176,7 @@ function NLPModels.varscale(nlp::AmplModel, s::Vector{Cdouble})
   length(s) >= nlp.meta.nvar || error("s must have length at least $(nlp.meta.nvar)")
 
   err = Ref{Cint}(0)
-  @ccall libasl.asl_varscale(nlp.__asl::Ptr{Cvoid}, s::Ptr{Cdouble}, err::Ref{Cint})::Cvoid
+  asl_varscale(nlp.__asl, s, err)
   err[] == 0 || throw(AmplException("Error while scaling variables"))
 end
 
@@ -227,7 +185,7 @@ NLPModels.varscale(nlp::AmplModel, s::AbstractVector) = varscale(nlp, Vector{Cdo
 function NLPModels.lagscale(nlp::AmplModel, σ::Float64)
   check_ampl_model(nlp)
   err = Ref{Cint}(0)
-  @ccall libasl.asl_lagscale(nlp.__asl::Ptr{Cvoid}, σ::Cdouble, err::Ref{Cint})::Cvoid
+  asl_lagscale(nlp.__asl, σ, err)
   err[] == 0 || throw(AmplException("Error while scaling Lagrangian"))
 end
 
@@ -236,7 +194,7 @@ function NLPModels.conscale(nlp::AmplModel, s::Vector{Cdouble})
   length(s) >= nlp.meta.ncon || error("s must have length at least $(nlp.meta.ncon)")
 
   err = Ref{Cint}(0)
-  @ccall libasl.asl_conscale(nlp.__asl::Ptr{Cvoid}, s::Ptr{Cdouble}, err::Ref{Cint})::Cvoid
+  asl_conscale(nlp.__asl, s, err)
   err[] == 0 || throw(AmplException("Error while scaling constraints"))
 end
 
@@ -249,7 +207,7 @@ function NLPModels.obj(nlp::AmplModel, x::Vector{Cdouble})
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Ref{Cint}(0)
-  f = @ccall libasl.asl_obj(nlp.__asl::Ptr{Cvoid}, x::Ptr{Cdouble}, err::Ref{Cint})::Float64
+  f = asl_obj(nlp.__asl, x, err)
   nlp.counters.neval_obj += 1
   err[] == 0 || throw(AmplException("Error while evaluating objective"))
   return f
@@ -262,12 +220,7 @@ function NLPModels.grad!(nlp::AmplModel, x::Vector{Cdouble}, g::Vector{Cdouble})
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Ref{Cint}(0)
-  @ccall libasl.asl_grad(
-    nlp.__asl::Ptr{Cvoid},
-    x::Ptr{Cdouble},
-    g::Ptr{Cdouble},
-    err::Ref{Cint},
-  )::Cvoid
+  asl_grad(nlp.__asl, x, g, err)
   nlp.counters.neval_grad += 1
   err[] == 0 || throw(AmplException("Error while evaluating objective gradient"))
   return g
@@ -285,12 +238,7 @@ function NLPModels.cons!(nlp::AmplModel, x::Vector{Cdouble}, c::Vector{Cdouble})
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Ref{Cint}(0)
-  @ccall libasl.asl_cons(
-    nlp.__asl::Ptr{Cvoid},
-    x::Ptr{Cdouble},
-    c::Ptr{Cdouble},
-    err::Ref{Cint},
-  )::Cvoid
+  asl_cons(nlp.__asl, x, c, err)
   nlp.counters.neval_cons += 1
   err[] == 0 || throw(AmplException("Error while evaluating constraints"))
   return c
@@ -309,12 +257,7 @@ function NLPModels.jth_con(nlp::AmplModel, x::Vector{Cdouble}, j::Int)
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Ref{Cint}(0)
-  cj = @ccall libasl.asl_jcon(
-    nlp.__asl::Ptr{Cvoid},
-    x::Ptr{Cdouble},
-    (j - 1)::Cint,
-    err::Ref{Cint},
-  )::Float64
+  cj = asl_jcon(nlp.__asl, x, j-1, err)
   nlp.counters.neval_jcon += 1
   err[] == 0 || throw(AmplException("Error while evaluating $j-th constraint"))
   return cj
@@ -328,13 +271,7 @@ function NLPModels.jth_congrad!(nlp::AmplModel, x::Vector{Cdouble}, j::Int, g::V
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
   err = Ref{Cint}(0)
-  @ccall libasl.asl_jcongrad(
-    nlp.__asl::Ptr{Cvoid},
-    x::Ptr{Cdouble},
-    g::Ptr{Cdouble},
-    (j - 1)::Cint,
-    err::Ref{Cint},
-  )::Cvoid
+  asl_jcongrad(nlp.__asl, x, g, j-1, err)
   nlp.counters.neval_jgrad += 1
   err[] == 0 || throw(AmplException("Error while evaluating $j-th constraint gradient"))
   return g
@@ -352,19 +289,12 @@ function NLPModels.jth_sparse_congrad(nlp::AmplModel, x::Vector{Cdouble}, j::Int
   (1 <= j <= nlp.meta.ncon) || error("expected 0 ≤ j ≤ $(nlp.meta.ncon)")
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  nnz = @ccall libasl.asl_sparse_congrad_nnz(nlp.__asl::Ptr{Cvoid}, (j - 1)::Cint)::Csize_t
+  nnz = asl_sparse_congrad_nnz(nlp.__asl, j-1)
 
   err = Ref{Cint}(0)
   inds = Vector{Cint}(undef, nnz)
   vals = Vector{Cdouble}(undef, nnz)
-  @ccall libasl.asl_sparse_congrad(
-    nlp.__asl::Ptr{Cvoid},
-    x::Ptr{Cdouble},
-    (j - 1)::Cint,
-    inds::Ptr{Cint},
-    vals::Ptr{Cdouble},
-    err::Ref{Cint},
-  )::Cvoid
+  asl_sparse_congrad(nlp.__asl, x, j-1, inds, vals, err)
   nlp.counters.neval_jgrad += 1
   err[] == 0 || throw(AmplException("Error while evaluating $j-th sparse constraint gradient"))
 
@@ -377,7 +307,7 @@ NLPModels.jth_sparse_congrad(nlp::AmplModel, x::AbstractVector, j::Int) =
   jth_sparse_congrad(nlp, Vector{Cdouble}(x), j)
 
 function NLPModels.jac_structure!(nlp::AmplModel, rows::Vector{Cint}, cols::Vector{Cint})
-  @ccall libasl.asl_jac_structure(nlp.__asl::Ptr{Cvoid}, rows::Ptr{Cint}, cols::Ptr{Cint})::Cvoid
+  asl_jac_structure(nlp.__asl, rows, cols)
 
   # Use 1-based indexing.
   rows[1:(nlp.meta.nnzj)] .+= Cint(1)
@@ -406,12 +336,7 @@ function NLPModels.jac_coord!(nlp::AmplModel, x::Vector{Cdouble}, vals::Vector{C
   nlp.counters.neval_cons -= 1
 
   err = Ref{Cint}(0)
-  @ccall libasl.asl_jacval(
-    nlp.__asl::Ptr{Cvoid},
-    x::Ptr{Cdouble},
-    vals::Ptr{Cdouble},
-    err::Ref{Cint},
-  )::Cvoid
+  asl_jacval(nlp.__asl, x, vals, err)
   nlp.counters.neval_jac += 1
   err[] == 0 || throw(AmplException("Error while evaluating constraints Jacobian"))
   return vals
@@ -467,13 +392,7 @@ function NLPModels.hprod!(
     _ = cons(nlp, x)
     nlp.counters.neval_cons -= 1
   end
-  @ccall libasl.asl_hprod(
-    nlp.__asl::Ptr{Cvoid},
-    y::Ptr{Cdouble},
-    v::Ptr{Cdouble},
-    hv::Ptr{Cdouble},
-    obj_weight::Cdouble,
-  )::Cvoid
+  asl_hprod(nlp.__asl, y, v, hv, obj_weight)
   nlp.counters.neval_hprod += 1
   return hv
 end
@@ -514,12 +433,7 @@ function NLPModels.jth_hprod!(
     nlp.counters.neval_cons -= 1
   end
   # end
-  @ccall libasl.asl_hvcompd(
-    nlp.__asl::Ptr{Cvoid},
-    v::Ptr{Cdouble},
-    hv::Ptr{Cdouble},
-    (j - 1)::Cint,
-  )::Cvoid
+  asl_hvcompd(nlp.__asl, v, hv, j-1)
   nlp.counters.neval_jhprod += 1
   return hv
 end
@@ -554,12 +468,7 @@ function NLPModels.ghjvprod!(
     _ = cons(nlp, x)
     nlp.counters.neval_cons -= 1
   end
-  @ccall libasl.asl_ghjvprod(
-    nlp.__asl::Ptr{Cvoid},
-    g::Ptr{Cdouble},
-    v::Ptr{Cdouble},
-    gHv::Ptr{Cdouble},
-  )::Cvoid
+  asl_ghjvprod(nlp.__asl, g, v, gHv)
   nlp.counters.neval_hprod += nlp.meta.ncon
   return gHv
 end
@@ -579,7 +488,7 @@ end
 
 function NLPModels.hess_structure!(nlp::AmplModel, rows::Vector{Cint}, cols::Vector{Cint})
   # Swap rows and cols to obtain the lower triangle.
-  @ccall libasl.asl_hess_structure(nlp.__asl::Ptr{Cvoid}, cols::Ptr{Cint}, rows::Ptr{Cint})::Cvoid
+  asl_hess_structure(nlp.__asl, cols, rows)
 
   # Use 1-based indexing.
   cols .+= Cint(1)
@@ -619,12 +528,7 @@ function NLPModels.hess_coord!(
   nlp.counters.neval_cons -= 1
   # end
 
-  @ccall libasl.asl_hessval(
-    nlp.__asl::Ptr{Cvoid},
-    y::Ptr{Cdouble},
-    obj_weight::Cdouble,
-    vals::Ptr{Cdouble},
-  )::Cvoid
+  asl_hessval(nlp.__asl, y, obj_weight, vals)
   nlp.counters.neval_hess += 1
   return vals
 end
@@ -660,12 +564,7 @@ function NLPModels.hess_coord!(
   nlp.counters.neval_cons -= 1
   # end
 
-  @ccall libasl.asl_hessval(
-    nlp.__asl::Ptr{Cvoid},
-    C_NULL::Ptr{Cdouble},
-    obj_weight::Cdouble,
-    vals::Ptr{Cdouble},
-  )::Cvoid
+  asl_hessval(nlp.__asl, C_NULL, obj_weight, vals)
   nlp.counters.neval_hess += 1
   return vals
 end
