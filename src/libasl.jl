@@ -7,8 +7,12 @@ function asl_finalize(asl)
 end
 
 function asl_write_sol(asl, msg, x, y)
-  @ccall libasl.asl_write_sol(asl::Ptr{Cvoid}, msg::Ptr{Cchar}, x::Ptr{Cdouble},
-                              y::Ptr{Cdouble})::Cvoid
+  @ccall libasl.asl_write_sol(
+    asl::Ptr{Cvoid},
+    msg::Ptr{Cchar},
+    x::Ptr{Cdouble},
+    y::Ptr{Cdouble},
+  )::Cvoid
 end
 
 function asl_objtype(asl)
@@ -152,13 +156,23 @@ function asl_jcon(asl, x, j, err)
 end
 
 function asl_jcongrad(asl, x, g, j, err)
-  @ccall libasl.asl_jcongrad(asl::Ptr{Cvoid}, x::Ptr{Cdouble}, g::Ptr{Cdouble}, j::Cint,
-                             err::Ptr{Cint})::Cvoid
+  @ccall libasl.asl_jcongrad(
+    asl::Ptr{Cvoid},
+    x::Ptr{Cdouble},
+    g::Ptr{Cdouble},
+    j::Cint,
+    err::Ptr{Cint},
+  )::Cvoid
 end
 
 function asl_hprod(asl, y, v, hv, w)
-  @ccall libasl.asl_hprod(asl::Ptr{Cvoid}, y::Ptr{Cdouble}, v::Ptr{Cdouble}, hv::Ptr{Cdouble},
-                          w::Cdouble)::Cvoid
+  @ccall libasl.asl_hprod(
+    asl::Ptr{Cvoid},
+    y::Ptr{Cdouble},
+    v::Ptr{Cdouble},
+    hv::Ptr{Cdouble},
+    w::Cdouble,
+  )::Cvoid
 end
 
 function asl_hvcompd(asl, v, hv, nobj)
@@ -166,8 +180,12 @@ function asl_hvcompd(asl, v, hv, nobj)
 end
 
 function asl_ghjvprod(asl, g, v, ghjv)
-  @ccall libasl.asl_ghjvprod(asl::Ptr{Cvoid}, g::Ptr{Cdouble}, v::Ptr{Cdouble},
-                             ghjv::Ptr{Cdouble})::Cvoid
+  @ccall libasl.asl_ghjvprod(
+    asl::Ptr{Cvoid},
+    g::Ptr{Cdouble},
+    v::Ptr{Cdouble},
+    ghjv::Ptr{Cdouble},
+  )::Cvoid
 end
 
 function asl_sparse_congrad_nnz(asl, j)
@@ -175,13 +193,25 @@ function asl_sparse_congrad_nnz(asl, j)
 end
 
 function asl_sparse_congrad(asl, x, j, inds, vals, err)
-  @ccall libasl.asl_sparse_congrad(asl::Ptr{Cvoid}, x::Ptr{Cdouble}, j::Cint, inds::Ptr{Cint},
-                                   vals::Ptr{Cdouble}, err::Ptr{Cint})::Cvoid
+  @ccall libasl.asl_sparse_congrad(
+    asl::Ptr{Cvoid},
+    x::Ptr{Cdouble},
+    j::Cint,
+    inds::Ptr{Cint},
+    vals::Ptr{Cdouble},
+    err::Ptr{Cint},
+  )::Cvoid
 end
 
 function asl_jac(asl, x, rows, cols, vals, err)
-  @ccall libasl.asl_jac(asl::Ptr{Cvoid}, x::Ptr{Cdouble}, rows::Ptr{Cint}, cols::Ptr{Cint},
-                        vals::Ptr{Cdouble}, err::Ptr{Cint})::Cvoid
+  @ccall libasl.asl_jac(
+    asl::Ptr{Cvoid},
+    x::Ptr{Cdouble},
+    rows::Ptr{Cint},
+    cols::Ptr{Cint},
+    vals::Ptr{Cdouble},
+    err::Ptr{Cint},
+  )::Cvoid
 end
 
 function asl_jac_structure(asl, rows, cols)
@@ -189,13 +219,23 @@ function asl_jac_structure(asl, rows, cols)
 end
 
 function asl_jacval(asl, x, vals, err)
-  @ccall libasl.asl_jacval(asl::Ptr{Cvoid}, x::Ptr{Cdouble}, vals::Ptr{Cdouble},
-                           err::Ptr{Cint})::Cvoid
+  @ccall libasl.asl_jacval(
+    asl::Ptr{Cvoid},
+    x::Ptr{Cdouble},
+    vals::Ptr{Cdouble},
+    err::Ptr{Cint},
+  )::Cvoid
 end
 
 function asl_hess(asl, y, w, rows, cols, vals)
-  @ccall libasl.asl_hess(asl::Ptr{Cvoid}, y::Ptr{Cdouble}, w::Cdouble, rows::Ptr{Cint},
-                         cols::Ptr{Cint}, vals::Ptr{Cdouble})::Cvoid
+  @ccall libasl.asl_hess(
+    asl::Ptr{Cvoid},
+    y::Ptr{Cdouble},
+    w::Cdouble,
+    rows::Ptr{Cint},
+    cols::Ptr{Cint},
+    vals::Ptr{Cdouble},
+  )::Cvoid
 end
 
 function asl_hess_structure(asl, rows, cols)
