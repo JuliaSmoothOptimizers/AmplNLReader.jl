@@ -17,7 +17,7 @@ is reformulated as
 ```math
 \begin{aligned}
        min_x  \quad &  f(x)\\
-\mathrm{s.t.} \quad &  c_L ≤ c(x) ≤ c_U,\\
+\mathrm{s.t.} \quad &  c_L ≤ c(x) ≤ c_U,\\
                     &  g_L ≤ g(x)  \\
                     &  x_L ≤ x \\
                     &  Diag(g(x)) x ≤ 0

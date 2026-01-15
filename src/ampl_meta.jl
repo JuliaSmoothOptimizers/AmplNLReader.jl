@@ -61,6 +61,11 @@ The following keyword arguments are accepted:
 - `n_cc`: number of complementarity constraints
 - `cvar`: indices of variables appearing in complementarity constraints (0 if constraint is regular)
 - `name`: problem name
+- `jac_residual_available`: indicates whether the sparse Jacobian of the residuals is available
+- `hess_residual_available`: indicates whether the sum of the sparse Hessians of the residuals is available
+- `jprod_residual_available`: indicates whether the Jacobian-vector product for the residuals is available
+- `jtprod_residual_available`: indicates whether the transpose Jacobian-vector product for the residuals is available
+- `hprod_residual_available`: indicates whether the Hessian-vector product for each residual is available
 """
 struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
   nvar::Int
@@ -120,6 +125,13 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
   cvar::Vector{Int}
   name::String
 
+  grad_available::Bool
+  jac_available::Bool
+  hess_available::Bool
+  jprod_available::Bool
+  jtprod_available::Bool
+  hprod_available::Bool
+
   function AmplNLPMeta(
     nvar::Int;
     x0::Vector{Float64} = fill!(Vector{Float64}(undef, nvar), 0.0),
@@ -155,6 +167,12 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     n_cc = 0,
     cvar = Int[],
     name = "Generic",
+    grad_available::Bool = true,
+    jac_available::Bool = (ncon > 0),
+    hess_available::Bool = true,
+    jprod_available::Bool = (ncon > 0),
+    jtprod_available::Bool = (ncon > 0),
+    hprod_available::Bool = true,
   )
     if (nvar < 1) || (ncon < 0)
       error("Nonsensical dimensions")
@@ -238,6 +256,12 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
       n_cc,
       cvar,
       name,
+      grad_available,
+      jac_available,
+      hess_available,
+      jprod_available,
+      jtprod_available,
+      hprod_available,
     )
   end
 end
