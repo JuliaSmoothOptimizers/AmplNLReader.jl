@@ -9,6 +9,7 @@ import ASL_jll
 
 const libasl = ASL_jll.libasl
 
+include("libasl.jl")
 include("ampl_meta.jl")
 include("ampl_model.jl")
 include("ampl_mpec_model.jl")
