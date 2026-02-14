@@ -61,11 +61,14 @@ The following keyword arguments are accepted:
 - `n_cc`: number of complementarity constraints
 - `cvar`: indices of variables appearing in complementarity constraints (0 if constraint is regular)
 - `name`: problem name
-- `jac_residual_available`: indicates whether the sparse Jacobian of the residuals is available
-- `hess_residual_available`: indicates whether the sum of the sparse Hessians of the residuals is available
-- `jprod_residual_available`: indicates whether the Jacobian-vector product for the residuals is available
-- `jtprod_residual_available`: indicates whether the transpose Jacobian-vector product for the residuals is available
-- `hprod_residual_available`: indicates whether the Hessian-vector product for each residual is available
+- `sparse_jacobian`: indicates whether the Jacobian of the constraints is sparse
+- `sparse_hessian`: indicates whether the Hessian of the Lagrangian is sparse
+- `grad_available`: indicates whether the gradient of the objective is available
+- `jac_available`: indicates whether the Jacobian of the constraints is available
+- `hess_available`: indicates whether the Hessian of the Lagrangian is available
+- `jprod_available`: indicates whether the Jacobian-vector product `J * v` is available
+- `jtprod_available`: indicates whether the transpose Jacobian-vector product `J' * v` is available
+- `hprod_available`: indicates whether the Hessian-vector product of the Lagrangian `H * v` is available
 """
 struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
   nvar::Int
@@ -125,6 +128,9 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
   cvar::Vector{Int}
   name::String
 
+  sparse_jacobian::Bool
+  sparse_hessian::Bool
+
   grad_available::Bool
   jac_available::Bool
   hess_available::Bool
@@ -167,6 +173,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     n_cc = 0,
     cvar = Int[],
     name = "Generic",
+    sparse_jacobian::Bool = true,
+    sparse_hessian::Bool = true,
     grad_available::Bool = true,
     jac_available::Bool = (ncon > 0),
     hess_available::Bool = true,
@@ -256,6 +264,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
       n_cc,
       cvar,
       name,
+      sparse_jacobian,
+      sparse_hessian,
       grad_available,
       jac_available,
       hess_available,

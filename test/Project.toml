@@ -8,7 +8,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 LinearAlgebra = "1.10"
-NLPModels = "0.21.6"
+NLPModels = "0.21.8"
 NLPModelsModifiers = "0.7"
 NLPModelsTest = "0.10.6"
 SparseArrays = "1.10"
