@@ -1,7 +1,4 @@
 export NLPModelMeta
-export has_bounds, bound_constrained, unconstrained
-export linearly_constrained, equality_constrained, inequality_constrained
-export has_equalities, has_inequalities
 
 """
     AmplNLPMeta <: AbstractNLPModelMeta
