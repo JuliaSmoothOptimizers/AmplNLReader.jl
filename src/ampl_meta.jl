@@ -61,6 +61,8 @@ The following keyword arguments are accepted:
 - `n_cc`: number of complementarity constraints
 - `cvar`: indices of variables appearing in complementarity constraints (0 if constraint is regular)
 - `name`: problem name
+- `variable_bounds_analysis`: whether to compute the partition of variables into fixed, lower-bounded, upper-bounded, range-bounded, free, and trivially infeasible sets
+- `constraint_bounds_analysis`: whether to compute the partition of constraints into equality, lower-bounded, upper-bounded, range-bounded, free, and trivially infeasible sets
 - `sparse_jacobian`: indicates whether the Jacobian of the constraints is sparse
 - `sparse_hessian`: indicates whether the Hessian of the Lagrangian is sparse
 - `grad_available`: indicates whether the gradient of the objective is available
@@ -128,6 +130,9 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
   cvar::Vector{Int}
   name::String
 
+  variable_bounds_analysis::Bool
+  constraint_bounds_analysis::Bool
+
   sparse_jacobian::Bool
   sparse_hessian::Bool
 
@@ -173,6 +178,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     n_cc = 0,
     cvar = Int[],
     name = "Generic",
+    variable_bounds_analysis::Bool = true,
+    constraint_bounds_analysis::Bool = true,
     sparse_jacobian::Bool = true,
     sparse_hessian::Bool = true,
     grad_available::Bool = true,
@@ -182,7 +189,7 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     jtprod_available::Bool = (ncon > 0),
     hprod_available::Bool = true,
   )
-    if (nvar < 1) || (ncon < 0)
+    if (nvar < 1) || (ncon < 0) || (nnzj < 0) || (nnzh < 0)
       error("Nonsensical dimensions")
     end
 
@@ -195,22 +202,37 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
       @lencheck ncon cvar
     end
 
-    ifix = findall(lvar .== uvar)
-    ilow = findall((lvar .> -Inf) .& (uvar .== Inf))
-    iupp = findall((lvar .== -Inf) .& (uvar .< Inf))
-    irng = findall((lvar .> -Inf) .& (uvar .< Inf) .& (lvar .< uvar))
-    ifree = findall((lvar .== -Inf) .& (uvar .== Inf))
-    iinf = findall(lvar .> uvar)
+    if variable_bounds_analysis
+      ifix = findall(lvar .== uvar)
+      ilow = findall((lvar .> -Inf) .& (uvar .== Inf))
+      iupp = findall((lvar .== -Inf) .& (uvar .< Inf))
+      irng = findall((lvar .> -Inf) .& (uvar .< Inf) .& (lvar .< uvar))
+      ifree = findall((lvar .== -Inf) .& (uvar .== Inf))
+      iinf = findall(lvar .> uvar)
+    else
+      ifix = Int[]
+      ilow = Int[]
+      iupp = Int[]
+      irng = Int[]
+      ifree = Int[]
+      iinf = Int[]
+    end
 
-    jfix = findall(lcon .== ucon)
-    jlow = findall((lcon .> -Inf) .& (ucon .== Inf))
-    jupp = findall((lcon .== -Inf) .& (ucon .< Inf))
-    jrng = findall((lcon .> -Inf) .& (ucon .< Inf) .& (lcon .< ucon))
-    jfree = findall((lcon .== -Inf) .& (ucon .== Inf))
-    jinf = findall(lcon .> ucon)
-
-    nnzj = max(0, nnzj)
-    nnzh = max(0, nnzh)
+    if (ncon > 0) && constraint_bounds_analysis
+      jfix = findall(lcon .== ucon)
+      jlow = findall((lcon .> -Inf) .& (ucon .== Inf))
+      jupp = findall((lcon .== -Inf) .& (ucon .< Inf))
+      jrng = findall((lcon .> -Inf) .& (ucon .< Inf) .& (lcon .< ucon))
+      jfree = findall((lcon .== -Inf) .& (ucon .== Inf))
+      jinf = findall(lcon .> ucon)
+    else
+      jfix = Int[]
+      jlow = Int[]
+      jupp = Int[]
+      jrng = Int[]
+      jfree = Int[]
+      jinf = Int[]
+    end
 
     nlin = length(lin)
     nnln = length(nln)
@@ -264,6 +286,8 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
       n_cc,
       cvar,
       name,
+      variable_bounds_analysis,
+      constraint_bounds_analysis,
       sparse_jacobian,
       sparse_hessian,
       grad_available,
@@ -283,12 +307,3 @@ for field in fieldnames(AmplNLPMeta)
   end
   @eval export $meth
 end
-
-NLPModels.has_bounds(meta::AmplNLPMeta) = length(meta.ifree) < meta.nvar
-NLPModels.bound_constrained(meta::AmplNLPMeta) = meta.ncon == 0 && has_bounds(meta)
-NLPModels.unconstrained(meta::AmplNLPMeta) = meta.ncon == 0 && !has_bounds(meta)
-NLPModels.linearly_constrained(meta::AmplNLPMeta) = meta.nlin == meta.ncon > 0
-NLPModels.equality_constrained(meta::AmplNLPMeta) = length(meta.jfix) == meta.ncon > 0
-NLPModels.inequality_constrained(meta::AmplNLPMeta) = meta.ncon > 0 && length(meta.jfix) == 0
-NLPModels.has_equalities(meta::AmplNLPMeta) = meta.ncon ≥ length(meta.jfix) > 0
-NLPModels.has_inequalities(meta::AmplNLPMeta) = meta.ncon > 0 && meta.ncon > length(meta.jfix)
