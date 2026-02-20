@@ -13,5 +13,5 @@ include("libasl.jl")
 include("ampl_meta.jl")
 include("ampl_model.jl")
 include("ampl_mpec_model.jl")
-
+include("ampl_utils.jl")
 end  # Module AmplNLReader
