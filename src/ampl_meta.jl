@@ -296,11 +296,3 @@ struct AmplNLPMeta <: AbstractNLPModelMeta{Float64, Vector{Float64}}
     )
   end
 end
-
-for field in fieldnames(AmplNLPMeta)
-  meth = Symbol("get_", field)
-  @eval begin
-    $meth(meta::AmplNLPMeta) = getproperty(meta, $(QuoteNode(field)))
-  end
-  @eval export $meth
-end
