@@ -464,10 +464,10 @@ function NLPModels.jth_hprod!(
 
   # if nlp.safe
   if j == 0
-    _ = obj(nlp, x_)
+    _ = obj(nlp, x)
     nlp.counters.neval_obj -= 1
   else
-    _ = cons!(nlp, x_, nlp.c_)
+    _ = cons!(nlp, x, nlp.c_)
     nlp.counters.neval_cons -= 1
   end
   # end
@@ -485,8 +485,10 @@ function NLPModels.jth_hprod!(
 )
   x_ = nlp.x_
   copyto!(x_, x)
+  v_ = nlp.v_
+  copyto!(v_, v)
   hv_ = nlp.g_
-  jth_hprod!(nlp, x_, Vector{Cdouble}(v), j, hv_)
+  jth_hprod!(nlp, x_, v_, j, hv_)
   @views hv[1:(nlp.meta.nvar)] .= hv_
   return hv
 end
