@@ -18,6 +18,11 @@ function exercise_ampl_model(nlp::AmplModel)
   x[1:2:end] .= nlp.meta.x0
   xview = @view x[1:2:end]
 
+  # exercise the obj, grad, cons for abstract input
+  @test f == obj(nlp, xview)
+  @test all(g .== grad(nlp, xview))
+  @test all(c .== cons(nlp, xview))
+
   for j = 1:(nlp.meta.ncon)
     cj = jth_con(nlp, xview, j)
     @test cj == c[j]

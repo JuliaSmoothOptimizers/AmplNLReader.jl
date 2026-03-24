@@ -12,6 +12,13 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
   __asl::Ptr{Cvoid}   # Pointer to internal ASL structure. Do not touch.
   counters::Counters  # Evaluation counters
   safe::Bool          # Always evaluate the objective before the Hessian.
+  c_::Vector{Float64} # Pre allocated work vector, of size ncon.
+  y_::Vector{Float64} # Pre allocated work vector, of size ncon.
+  g_::Vector{Float64} # Pre allocated work vector, of size nvar.
+  x_::Vector{Float64} # Pre allocated work vector, of size nvar.
+  v_::Vector{Float64} # Pre allocated work vector, of size nvar.
+  j_::Vector{Float64} # Pre allocated work vector, of size nnzj.
+  h_::Vector{Float64} # Pre allocated work vector, of size nnzh.
 
   function AmplModel(stub::AbstractString; safe::Bool = false)
 
@@ -87,6 +94,15 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
     end
     nnzh = (asl_nnzh(asl)) |> Int
 
+    # Note Cdouble=Float64 definitionally for all platforms we care about.
+    g_ = Vector{Float64}(undef, nvar)
+    x_ = Vector{Float64}(undef, nvar)
+    v_ = Vector{Float64}(undef, nvar)
+    c_ = Vector{Float64}(undef, ncon)
+    y_ = Vector{Float64}(undef, ncon)
+    j_ = Vector{Float64}(undef, nnzj)
+    h_ = Vector{Float64}(undef, nnzh)
+
     meta = AmplNLPMeta(
       nvar,
       x0 = x0,
@@ -123,7 +139,7 @@ mutable struct AmplModel <: AbstractNLPModel{Float64, Vector{Float64}}
       name = split(fname, ".")[1],  # do not include path or extension in model name
     )
 
-    nlp = new(meta, asl, Counters(), safe)
+    nlp = new(meta, asl, Counters(), safe, c_, y_, g_, x_, v_, j_, h_)
 
     finalizer(amplmodel_finalize, nlp)
     return nlp
@@ -213,7 +229,11 @@ function NLPModels.obj(nlp::AmplModel, x::Vector{Cdouble})
   return f
 end
 
-NLPModels.obj(nlp::AmplModel, x::AbstractVector) = obj(nlp, Vector{Cdouble}(x))
+function NLPModels.obj(nlp::AmplModel, x::AbstractVector)
+  x_ = nlp.x_
+  copyto!(x_, x)
+  return obj(nlp, x_)
+end
 
 function NLPModels.grad!(nlp::AmplModel, x::Vector{Cdouble}, g::Vector{Cdouble})
   check_ampl_model(nlp)
@@ -227,9 +247,11 @@ function NLPModels.grad!(nlp::AmplModel, x::Vector{Cdouble}, g::Vector{Cdouble})
 end
 
 function NLPModels.grad!(nlp::AmplModel, x::AbstractVector, g::AbstractVector)
-  g_ = Vector{Cdouble}(undef, nlp.meta.nvar)
-  grad!(nlp, Vector{Cdouble}(x), g_)
-  g[1:(nlp.meta.nvar)] .= g_
+  g_ = nlp.g_
+  x_ = nlp.x_
+  copyto!(x_, x)
+  grad!(nlp, x_, g_)
+  @views g[1:(nlp.meta.nvar)] .= g_
   return g
 end
 
@@ -245,9 +267,11 @@ function NLPModels.cons!(nlp::AmplModel, x::Vector{Cdouble}, c::Vector{Cdouble})
 end
 
 function NLPModels.cons!(nlp::AmplModel, x::AbstractVector, c::AbstractVector)
-  c_ = Vector{Cdouble}(undef, nlp.meta.ncon)
-  cons!(nlp, Vector{Cdouble}(x), c_)
-  c[1:(nlp.meta.ncon)] .= c_
+  c_ = nlp.c_
+  x_ = nlp.x_
+  copyto!(x_, x)
+  cons!(nlp, x_, c_)
+  @views c[1:(nlp.meta.ncon)] .= c_
   return c
 end
 
@@ -278,9 +302,11 @@ function NLPModels.jth_congrad!(nlp::AmplModel, x::Vector{Cdouble}, j::Int, g::V
 end
 
 function NLPModels.jth_congrad!(nlp::AmplModel, x::AbstractVector, j::Int, g::AbstractVector)
-  g_ = Vector{Cdouble}(undef, nlp.meta.nvar)
-  jth_congrad!(nlp, Vector{Cdouble}(x), j, g_)
-  g[1:(nlp.meta.nvar)] .= g_
+  g_ = nlp.g_
+  x_ = nlp.x_
+  copyto!(x_, x)
+  jth_congrad!(nlp, x_, j, g_)
+  @views g[1:(nlp.meta.nvar)] .= g_
   return g
 end
 
@@ -310,8 +336,8 @@ function NLPModels.jac_structure!(nlp::AmplModel, rows::Vector{Cint}, cols::Vect
   asl_jac_structure(nlp.__asl, rows, cols)
 
   # Use 1-based indexing.
-  rows[1:(nlp.meta.nnzj)] .+= Cint(1)
-  cols[1:(nlp.meta.nnzj)] .+= Cint(1)
+  @views rows[1:(nlp.meta.nnzj)] .+= Cint(1)
+  @views cols[1:(nlp.meta.nnzj)] .+= Cint(1)
   return rows, cols
 end
 
@@ -323,8 +349,8 @@ function NLPModels.jac_structure!(
   rows_ = Vector{Cint}(undef, nlp.meta.nnzj)
   cols_ = Vector{Cint}(undef, nlp.meta.nnzj)
   jac_structure!(nlp, rows_, cols_)
-  rows[1:(nlp.meta.nnzj)] .= rows_
-  cols[1:(nlp.meta.nnzj)] .= cols_
+  @views rows[1:(nlp.meta.nnzj)] .= rows_
+  @views cols[1:(nlp.meta.nnzj)] .= cols_
   return rows, cols
 end
 
@@ -332,7 +358,7 @@ function NLPModels.jac_coord!(nlp::AmplModel, x::Vector{Cdouble}, vals::Vector{C
   check_ampl_model(nlp)
   length(x) >= nlp.meta.nvar || error("x must have length at least $(nlp.meta.nvar)")
 
-  _ = cons(nlp, x)
+  _ = cons!(nlp, x, nlp.c_)
   nlp.counters.neval_cons -= 1
 
   err = Ref{Cint}(0)
@@ -347,16 +373,20 @@ function NLPModels.jac_coord!(
   x::AbstractVector,
   vals::AbstractVector{<:AbstractFloat},
 )
-  vals_ = Vector{Cdouble}(undef, nlp.meta.nnzj)
-  jac_coord!(nlp, Vector{Cdouble}(x), vals_)
-  vals[1:(nlp.meta.nnzj)] .= vals_
+  vals_ = nlp.j_
+  x_ = nlp.x_
+  copyto!(x_, x)
+  jac_coord!(nlp, x_, vals_)
+  @views vals[1:(nlp.meta.nnzj)] .= vals_
   return vals
 end
 
 function NLPModels.jprod!(nlp::AmplModel, x::AbstractVector, v::AbstractVector, Jv::AbstractVector)
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jprod += 1
-  Jv[1:(nlp.meta.ncon)] = jac(nlp, Vector{Cdouble}(x)) * v
+  x_ = nlp.x_
+  copyto!(x_, x)
+  @views Jv[1:(nlp.meta.ncon)] = jac(nlp, x_) * v
   return Jv
 end
 
@@ -368,13 +398,15 @@ function NLPModels.jtprod!(
 )
   nlp.counters.neval_jac -= 1
   nlp.counters.neval_jtprod += 1
-  Jtv[1:(nlp.meta.nvar)] = jac(nlp, Vector{Cdouble}(x))' * v
+  x_ = nlp.x_
+  copyto!(x_, x)
+  @views Jtv[1:(nlp.meta.nvar)] = jac(nlp, x_)' * v
   return Jtv
 end
 
 function NLPModels.hprod!(
   nlp::AmplModel,
-  x::AbstractVector,
+  x::Vector{Cdouble},
   y::Vector{Cdouble},
   v::Vector{Cdouble},
   hv::Vector{Cdouble};
@@ -389,7 +421,7 @@ function NLPModels.hprod!(
   if nlp.safe
     _ = obj(nlp, x)
     nlp.counters.neval_obj -= 1
-    _ = cons(nlp, x)
+    _ = cons!(nlp, x, nlp.c_)
     nlp.counters.neval_cons -= 1
   end
   asl_hprod(nlp.__asl, y, v, hv, obj_weight)
@@ -405,15 +437,21 @@ function NLPModels.hprod!(
   hv::AbstractVector;
   obj_weight::Float64 = 1.0,
 )
-  hv_ = Vector{Cdouble}(undef, nlp.meta.nvar)
-  hprod!(nlp, x, Vector{Cdouble}(y), Vector{Cdouble}(v), hv_; obj_weight = obj_weight)
-  hv[1:(nlp.meta.nvar)] .= hv_
+  hv_ = nlp.g_
+  v_ = nlp.v_
+  copyto!(v_, v)
+  y_ = nlp.y_
+  copyto!(y_, y)
+  x_ = nlp.x_
+  copyto!(x_, x)
+  hprod!(nlp, x_, y_, v_, hv_; obj_weight = obj_weight)
+  @views hv[1:(nlp.meta.nvar)] .= hv_
   return hv
 end
 
 function NLPModels.jth_hprod!(
   nlp::AmplModel,
-  x::AbstractVector,
+  x::Vector{Cdouble},
   v::Vector{Cdouble},
   j::Int,
   hv::Vector{Cdouble},
@@ -426,10 +464,10 @@ function NLPModels.jth_hprod!(
 
   # if nlp.safe
   if j == 0
-    _ = obj(nlp, Vector{Cdouble}(x))
+    _ = obj(nlp, x)
     nlp.counters.neval_obj -= 1
   else
-    _ = cons(nlp, Vector{Cdouble}(x))
+    _ = cons!(nlp, x, nlp.c_)
     nlp.counters.neval_cons -= 1
   end
   # end
@@ -445,15 +483,19 @@ function NLPModels.jth_hprod!(
   j::Int,
   hv::AbstractVector,
 )
-  hv_ = Vector{Cdouble}(undef, nlp.meta.nvar)
-  jth_hprod!(nlp, x, Vector{Cdouble}(v), j, hv_)
-  hv[1:(nlp.meta.nvar)] .= hv_
+  x_ = nlp.x_
+  copyto!(x_, x)
+  v_ = nlp.v_
+  copyto!(v_, v)
+  hv_ = nlp.g_
+  jth_hprod!(nlp, x_, v_, j, hv_)
+  @views hv[1:(nlp.meta.nvar)] .= hv_
   return hv
 end
 
 function NLPModels.ghjvprod!(
   nlp::AmplModel,
-  x::AbstractVector,
+  x::Vector{Cdouble},
   g::Vector{Cdouble},
   v::Vector{Cdouble},
   gHv::Vector{Cdouble},
@@ -480,9 +522,15 @@ function NLPModels.ghjvprod!(
   v::AbstractVector,
   gHv::AbstractVector,
 )
-  gHv_ = Vector{Cdouble}(undef, nlp.meta.ncon)
-  ghjvprod!(nlp, x, Vector{Cdouble}(g), Vector{Cdouble}(v), gHv_)
-  gHv[1:(nlp.meta.ncon)] .= gHv_
+  x_ = nlp.x_
+  copyto!(x_, x)
+  g_ = nlp.g_
+  copyto!(g_, g)
+  v_ = nlp.v_
+  copyto!(v_, v)
+  gHv_ = nlp.c_
+  ghjvprod!(nlp, x_, g_, v_, gHv_)
+  @views gHv[1:(nlp.meta.ncon)] .= gHv_
   return gHv
 end
 
@@ -504,14 +552,14 @@ function NLPModels.hess_structure!(
   rows_ = Vector{Cint}(undef, nlp.meta.nnzh)
   cols_ = Vector{Cint}(undef, nlp.meta.nnzh)
   hess_structure!(nlp, rows_, cols_)
-  rows[1:(nlp.meta.nnzh)] .= rows_
-  cols[1:(nlp.meta.nnzh)] .= cols_
+  @views rows[1:(nlp.meta.nnzh)] .= rows_
+  @views cols[1:(nlp.meta.nnzh)] .= cols_
   return (rows, cols)
 end
 
 function NLPModels.hess_coord!(
   nlp::AmplModel,
-  x::AbstractVector,
+  x::Vector{Cdouble},
   y::Vector{Cdouble},
   vals::Vector{Cdouble};
   obj_weight::Float64 = 1.0,
@@ -524,7 +572,7 @@ function NLPModels.hess_coord!(
   # if nlp.safe
   _ = obj(nlp, x)
   nlp.counters.neval_obj -= 1
-  _ = cons(nlp, x)
+  _ = cons!(nlp, x, nlp.c_)
   nlp.counters.neval_cons -= 1
   # end
 
@@ -540,16 +588,20 @@ function NLPModels.hess_coord!(
   vals::AbstractVector{<:AbstractFloat};
   kwargs...,
 )
-  vals_ = Vector{Cdouble}(undef, nlp.meta.nnzh)
-  hess_coord!(nlp, x, Vector{Cdouble}(y), vals_; kwargs...)
-  vals[1:(nlp.meta.nnzh)] .= vals_
+  vals_ = nlp.h_
+  y_ = nlp.y_
+  copyto!(y_, y)
+  x_ = nlp.x_
+  copyto!(x_, x)
+  hess_coord!(nlp, x_, y_, vals_; kwargs...)
+  @views vals[1:(nlp.meta.nnzh)] .= vals_
   return vals
 end
 
 # evaluate the objective Hessian
 function NLPModels.hess_coord!(
   nlp::AmplModel,
-  x::AbstractVector,
+  x::Vector{Cdouble},
   vals::Vector{Cdouble};
   obj_weight::Float64 = 1.0,
 )
@@ -560,7 +612,7 @@ function NLPModels.hess_coord!(
   # if nlp.safe
   _ = obj(nlp, x)
   nlp.counters.neval_obj -= 1
-  _ = cons(nlp, x)
+  _ = cons!(nlp, x, nlp.c_)
   nlp.counters.neval_cons -= 1
   # end
 
@@ -575,8 +627,10 @@ function NLPModels.hess_coord!(
   vals::AbstractVector{<:AbstractFloat};
   kwargs...,
 )
-  vals_ = Vector{Cdouble}(undef, nlp.meta.nnzh)
-  hess_coord!(nlp, x, vals_; kwargs...)
-  vals[1:(nlp.meta.nnzh)] .= vals_
+  vals_ = nlp.h_
+  x_ = nlp.x_
+  copyto!(x_, x)
+  hess_coord!(nlp, x_, vals_; kwargs...)
+  @views vals[1:(nlp.meta.nnzh)] .= vals_
   return vals
 end
