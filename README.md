@@ -13,7 +13,6 @@ If you use AmplNLReader.jl in your work, please cite using the format given in [
 - Documentation: [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaSmoothOptimizers.github.io/AmplNLReader.jl/latest)
 - Tests:
     - ![CI](https://github.com/JuliaSmoothOptimizers/AmplNLReader.jl/workflows/CI/badge.svg?branch=main) (Linux, macOS, Windows)
-    - [![Build Status](https://api.cirrus-ci.com/github/JuliaSmoothOptimizers/AmplNLReader.jl.svg)](https://cirrus-ci.com/github/JuliaSmoothOptimizers/AmplNLReader.jl) (FreeBSD)
     - [![codecov](https://codecov.io/gh/JuliaSmoothOptimizers/AmplNLReader.jl/branch/main/graph/badge.svg?token=KwtSr5vCBr)](https://codecov.io/gh/JuliaSmoothOptimizers/AmplNLReader.jl)
 
 ## How to Install
